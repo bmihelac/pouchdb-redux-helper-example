@@ -5,7 +5,7 @@
   "license": "ISC",
   "version": "0.0.0",
   "scripts": {
-    "build": "babel src/index.js --out-dir static/",
+    "build": "babel src/index.js --out-dir dist/",
     "start": "webpack-dev-server --progress --colors  --history-api-fallback"
   },
   "dependencies": {
