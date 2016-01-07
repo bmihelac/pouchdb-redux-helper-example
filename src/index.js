@@ -6,7 +6,9 @@ import { Provider } from 'react-redux';
 import { reducer as formReducer } from 'redux-form';
 import { devTools } from 'redux-devtools';
 import { DevTools, DebugPanel, LogMonitor } from 'redux-devtools/lib/react';
-import createHistory from 'history/lib/createBrowserHistory';
+//github pages does not support redirect all
+//import createHistory from 'history/lib/createBrowserHistory';
+import createHistory from 'history/lib/createHashHistory';
 import { reduxReactRouter, ReduxRouter, routerStateReducer, pushState } from 'redux-router';
 import { Route, Link } from 'react-router';
 import {reduxForm} from 'redux-form';
