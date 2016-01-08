@@ -2,7 +2,7 @@ import PouchDB from 'pouchdb';
 import React, { Component } from 'react';
 import { render } from 'react-dom';
 import { compose, createStore, applyMiddleware, combineReducers } from 'redux';
-import { Provider } from 'react-redux';
+import { Provider, connect } from 'react-redux';
 import { reducer as formReducer } from 'redux-form';
 import { devTools } from 'redux-devtools';
 import { DevTools, DebugPanel, LogMonitor } from 'redux-devtools/lib/react';
@@ -69,13 +69,13 @@ const onCreate = (item, data, dispatch) => {
 }
 
 
-const ProjectDetail = ({items, dispatch}) => (
+const ProjectDetail = ({item, dispatch}) => (
   <div>
-    <span>{ items.get('name') }</span>
-    <Link to={`/projects/${items.get('_id')}/edit/`}>Edit</Link>
+    <span>{ item.get('name') }</span>
+    <Link to={`/projects/${item.get('_id')}/edit/`}>Edit</Link>
 
     <p>
-      <button onClick={ () => onRemove(dispatch, items) }>remove</button>
+      <button onClick={ () => onRemove(dispatch, item) }>remove</button>
     </p>
   </div>
 );
@@ -100,7 +100,9 @@ export const ProjectNewContainer = reduxForm(projectFormOptions, state => ({
   onSubmit: redirectToList.bind(null, onCreate, null),
 }))(ProjectForm);
 
-export const ProjectDetailContainer = containers.connectSingleItem(projectsCrud)(ProjectDetail);
+export const ProjectDetailContainer = connect(state => ({ docId: state.router.params.id }))(
+  containers.connectSingleItem(projectsCrud)(ProjectDetail)
+)
 
 
 const editMapStateToProps = state => {
