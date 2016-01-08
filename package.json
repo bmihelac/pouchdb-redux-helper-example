@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "pouchdb": "^5.0.0",
-    "pouchdb-redux-helper": "^0.3.0",
+    "pouchdb-redux-helper": "^0.4.0",
     "react-dom": "^0.14.3",
     "react-redux": "^3.0.0",
     "react-router": "^1.0.0-rc3",
