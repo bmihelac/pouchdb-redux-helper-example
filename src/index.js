@@ -129,9 +129,10 @@ class App extends Component {
   }
 }
 
-export const ProjectEditContainer = containers.connectSingleItem(projectsCrud)(
-  reduxForm(projectFormOptions, editMapStateToProps)(ProjectForm)
-);
+export const ProjectEditContainer = connect(state => ({ docId: state.router.params.id }))(
+  containers.connectSingleItem(projectsCrud)(
+    reduxForm(projectFormOptions, editMapStateToProps)(ProjectForm)
+));
 
 const routes = (
   <Route path="/" component={App}>
