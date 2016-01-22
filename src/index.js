@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { render } from 'react-dom';
 import { compose, createStore, applyMiddleware, combineReducers } from 'redux';
 import { Provider, connect } from 'react-redux';
+import thunk from 'redux-thunk';
 import { reducer as formReducer } from 'redux-form';
 import { devTools } from 'redux-devtools';
 import { DevTools, DebugPanel, LogMonitor } from 'redux-devtools/lib/react';
@@ -12,11 +13,11 @@ import createHistory from 'history/lib/createHashHistory';
 import { reduxReactRouter, ReduxRouter, routerStateReducer, pushState } from 'redux-router';
 import { Route, Link } from 'react-router';
 import {reduxForm} from 'redux-form';
-import { pouchdbMiddleware, createCRUD, containers, utils } from 'pouchdb-redux-helper';
+import { createCRUD, containers, utils } from 'pouchdb-redux-helper';
 
 
 const db = PouchDB('testdb');
-const middlewares = [pouchdbMiddleware(db)];
+const middlewares = [thunk];
 const projectsCrud = createCRUD(db, 'projects');
 const reducers = combineReducers({
   form: formReducer,
