@@ -29,14 +29,22 @@ body {
 
     <h1><a href="http://bmihelac.github.io/pouchdb-redux-helper-example/">pouchdb-redux-helper example</a></h1>
 
-    <div id='root'>
-    </div>
+    {% block body %}
+      <div id='root'>
+      </div>
+    {% endblock %}
+
+    {{ contents|safe }}
 
     <p>
       <a href="https://github.com/bmihelac/pouchdb-redux-helper-example">github.com/bmihelac/pouchdb-redux-helper-example</a>
     </p>
 
-    <script src="dist/example1.bundle.js"></script>
+    {% block scripts %}
+      {% if bundle %}
+        <script src="{{ bundle }}"></script>
+      {% endif %}
+    {% endblock %}
 
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -50,4 +58,5 @@ body {
 
   </body>
 </html>
+
 
