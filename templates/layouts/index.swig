@@ -42,7 +42,7 @@ body {
 
     {% block scripts %}
       {% if bundle %}
-        <script src="{{ bundle }}"></script>
+        <script src="dist/{{ bundle }}"></script>
       {% endif %}
     {% endblock %}
 
