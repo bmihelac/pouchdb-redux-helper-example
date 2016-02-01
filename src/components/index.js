@@ -56,3 +56,25 @@ export const ProjectList = ({items}) => (
   </div>
 );
 
+export const ProjectTable = ({items}) => (
+  <table className="table">
+    <tbody>
+      { items.map(item => (
+        <tr key={ item.get('_id') }>
+          <td>{ item.get('name') }</td>
+        </tr>
+       ))}
+     </tbody>
+  </table>
+);
+
+
+export class App extends Component {
+  render() {
+    return (
+      <div className="main">
+        {this.props.children}
+      </div>
+    );
+  }
+}

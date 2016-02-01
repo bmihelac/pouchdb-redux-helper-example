@@ -3,6 +3,7 @@ var path = require('path');
 module.exports = {
   entry: {
     example1: './src/example1',
+    example2: './src/example2',
   },
   output: {
     path: path.join(__dirname, 'dist'),
