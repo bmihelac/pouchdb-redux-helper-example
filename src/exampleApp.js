@@ -38,6 +38,5 @@ export default function createExampleApp(reducers, routes) {
     ,
     document.getElementById('root') 
   );
+  return store;
 }
-
-

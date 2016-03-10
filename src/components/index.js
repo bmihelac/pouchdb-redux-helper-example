@@ -56,3 +56,49 @@ export const ProjectList = ({items}) => (
   </div>
 );
 
+export const ProjectTable = ({items, columns=['name']}) => (
+  <table className="table table-hove ">
+    <thead>
+      <tr>
+        { columns.map(column => (
+          <th key={column}>{ column }</th>
+          )) }
+      </tr>
+    </thead>
+    <tbody>
+      { items.map(item => (
+        <tr key={ item.get('_id') }>
+          { columns.map(column => (
+            <td key={column}>{ item.get(column) }</td>
+            )) }
+        </tr>
+       ))}
+     </tbody>
+  </table>
+);
+
+
+// linked list style pagination component
+export const Navigation = ({next, prev}) => {
+  const nextLink = next ? <Link to={`?start=${next}`}>Next page</Link> : <span>Next page</span>;
+  const prevLink = prev ? <Link to={`?start=${prev}`}>Previous page</Link> : <span>Previous page</span>;
+  return (
+    <nav>
+      <ul className="pager">
+        <li className={prev ? '' : 'disabled'}>{prevLink}</li>
+        <li className={next ? '': 'disabled'}>{nextLink}</li>
+      </ul>
+    </nav>
+  );
+};
+
+
+export class App extends Component {
+  render() {
+    return (
+      <div className="main">
+        {this.props.children}
+      </div>
+    );
+  }
+}

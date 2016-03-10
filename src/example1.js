@@ -12,6 +12,7 @@ import {
   projectFormOptions,
   ProjectDetail,
   ProjectList,
+  App,
 } from './components';
 import createExampleApp from './exampleApp';
 
@@ -66,16 +67,6 @@ export const ProjectEditContainer = connect(state => ({ docId: state.router.para
     reduxForm(projectFormOptions, editMapStateToProps)(ProjectForm)
 ));
 
-class App extends Component {
-  render() {
-    return (
-      <div className="main">
-        {this.props.children}
-      </div>
-    );
-  }
-}
-
 const routes = (
   <Route path="/" component={App}>
     <IndexRoute component={ AllProjectListContainer } />
@@ -88,4 +79,3 @@ const routes = (
 
 
 createExampleApp(reducers, routes);
-
