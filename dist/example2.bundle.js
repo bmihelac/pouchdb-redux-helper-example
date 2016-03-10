@@ -83,20 +83,15 @@
 	var projectsCrud = (0, _pouchdbReduxHelper.createCRUD)(db, 'doc');
 	var reducers = _defineProperty({}, projectsCrud.mountPoint, projectsCrud.reducer);
 
-	var PaginatedComponent = function PaginatedComponent(_ref) {
-	  var items = _ref.items;
-	  var folderVars = _ref.folderVars;
-
-	  var rowsPerPage = folderVars.get('rowsPerPage');
-	  var prev = folderVars.get('prevStartkey');
-	  var next = items.getIn([rowsPerPage, '_id']);
-	  var current = items.getIn([0, '_id']);
+	var PaginatedComponent = function PaginatedComponent(props) {
+	  var prev = props.folderVars.get('prev');
+	  var next = props.folderVars.get('next');
 
 	  return _react2['default'].createElement(
 	    'div',
 	    null,
-	    _react2['default'].createElement(_components.ProjectTable, { items: items.slice(0, rowsPerPage) }),
-	    _react2['default'].createElement(_components.Navigation, { current: current, next: next, prev: prev })
+	    _react2['default'].createElement(_components.ProjectTable, { items: props.items }),
+	    _react2['default'].createElement(_components.Navigation, { next: next, prev: prev })
 	  );
 	};
 
@@ -114,14 +109,11 @@
 	  _createClass(Container, [{
 	    key: 'render',
 	    value: function render() {
-	      var _props = this.props;
-	      var startkey = _props.startkey;
-	      var prevStartkey = _props.prevStartkey;
+	      var startkey = this.props.startkey;
 
 	      var C = (0, _pouchdbReduxHelper.paginate)({
 	        rowsPerPage: 5,
-	        startkey: startkey,
-	        prevStartkey: prevStartkey
+	        startkey: startkey
 	      }, projectsCrud)(PaginatedComponent);
 	      return _react2['default'].createElement(C);
 	    }
@@ -130,8 +122,7 @@
 	  var _Container = Container;
 	  Container = (0, _reactRedux.connect)(function (state) {
 	    return {
-	      startkey: state.router.location.query.start,
-	      prevStartkey: state.router.location.query.prev
+	      startkey: state.router.location.query.start
 	    };
 	  })(Container) || Container;
 	  return Container;
@@ -161,19 +152,19 @@
 
 	/* WEBPACK VAR INJECTION */(function(process, global) {'use strict';
 
-	function _interopDefault (ex) { return 'default' in ex ? ex['default'] : ex; }
+	function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 	var jsExtend = __webpack_require__(3);
 	var jsExtend__default = _interopDefault(jsExtend);
-	var inherits = _interopDefault(__webpack_require__(4));
-	var collections = _interopDefault(__webpack_require__(5));
-	var events = __webpack_require__(6);
-	var getArguments = _interopDefault(__webpack_require__(7));
-	var debug = _interopDefault(__webpack_require__(8));
-	var pouchCollate = __webpack_require__(11);
+	var debug = _interopDefault(__webpack_require__(4));
+	var inherits = _interopDefault(__webpack_require__(7));
+	var lie = _interopDefault(__webpack_require__(8));
+	var pouchdbCollections = __webpack_require__(10);
+	var getArguments = _interopDefault(__webpack_require__(11));
+	var events = __webpack_require__(12);
+	var scopedEval = _interopDefault(__webpack_require__(13));
+	var pouchCollate = __webpack_require__(14);
 	var pouchCollate__default = _interopDefault(pouchCollate);
-	var lie = _interopDefault(__webpack_require__(13));
-	var scopedEval = _interopDefault(__webpack_require__(15));
 	var Md5 = _interopDefault(__webpack_require__(16));
 	var vuvuzela = _interopDefault(__webpack_require__(17));
 
@@ -326,17 +317,17 @@
 	  });
 	}
 
-	var log$2 = debug('pouchdb:api');
+	var log = debug('pouchdb:api');
 
 	function adapterFun(name, callback) {
 	  function logApiCall(self, name, args) {
 	    /* istanbul ignore if */
-	    if (log$2.enabled) {
+	    if (log.enabled) {
 	      var logArgs = [self._db_name, name];
 	      for (var i = 0; i < args.length - 1; i++) {
 	        logArgs.push(args[i]);
 	      }
-	      log$2.apply(null, logArgs);
+	      log.apply(null, logArgs);
 
 	      // override the callback itself to log the response
 	      var origCallback = args[args.length - 1];
@@ -345,7 +336,7 @@
 	        responseArgs = responseArgs.concat(
 	          err ? ['error', err] : ['success', res]
 	        );
-	        log$2.apply(null, responseArgs);
+	        log.apply(null, responseArgs);
 	        origCallback(err, res);
 	      };
 	    }
@@ -354,6 +345,9 @@
 	  return toPromise(getArguments(function (args) {
 	    if (this._closed) {
 	      return PouchPromise.reject(new Error('database is closed'));
+	    }
+	    if (this._destroyed) {
+	      return PouchPromise.reject(new Error('database is destroyed'));
 	    }
 	    var self = this;
 	    logApiCall(self, name, args);
@@ -850,9 +844,9 @@
 	  return error;
 	}
 
-	inherits(Changes$1, events.EventEmitter);
+	inherits(Changes, events.EventEmitter);
 
-	function Changes$1(db, opts, callback) {
+	function Changes(db, opts, callback) {
 	  events.EventEmitter.call(this);
 	  var self = this;
 	  this.db = db;
@@ -921,7 +915,7 @@
 	    self.doChanges(opts);
 	  }
 	}
-	Changes$1.prototype.cancel = function () {
+	Changes.prototype.cancel = function () {
 	  this.isCancelled = true;
 	  if (this.db.taskqueue.isReady) {
 	    this.emit('cancel');
@@ -951,7 +945,7 @@
 	  return change;
 	}
 
-	Changes$1.prototype.doChanges = function (opts) {
+	Changes.prototype.doChanges = function (opts) {
 	  var self = this;
 	  var callback = opts.complete;
 
@@ -1022,7 +1016,7 @@
 	  }
 	};
 
-	Changes$1.prototype.filterChanges = function (opts) {
+	Changes.prototype.filterChanges = function (opts) {
 	  var self = this;
 	  var callback = opts.complete;
 	  if (opts.filter === '_view') {
@@ -1033,7 +1027,7 @@
 	    }
 	    // fetch a view from a design doc, make it behave like a filter
 	    var viewName = parseDesignDocFunctionName(opts.view);
-	    this.db.get('_design/' + viewName[0], function (err, ddoc) {
+	    this.db.getView(viewName[0], viewName[1], function (err, view) {
 	      /* istanbul ignore if */
 	      if (self.isCancelled) {
 	        return callback(null, {status: 'cancelled'});
@@ -1042,14 +1036,10 @@
 	      if (err) {
 	        return callback(generateErrorFromResponse(err));
 	      }
-	      var mapFun = ddoc && ddoc.views && ddoc.views[viewName[1]] &&
-	        ddoc.views[viewName[1]].map;
-	      if (!mapFun) {
-	        return callback(createError(MISSING_DOC,
-	          (ddoc.views ? 'missing json key: ' + viewName[1] :
-	            'missing json key: views')));
+	      if (!view.map) {
+	        return callback(createError(MISSING_DOC));
 	      }
-	      opts.filter = evalView(mapFun);
+	      opts.filter = evalView(view.map);
 	      self.doChanges(opts);
 	    });
 	  } else {
@@ -1058,7 +1048,7 @@
 	    if (!filterName) {
 	      return self.doChanges(opts);
 	    }
-	    this.db.get('_design/' + filterName[0], function (err, ddoc) {
+	    this.db.getFilter(filterName[0], filterName[1], function (err, filterFun) {
 	      /* istanbul ignore if */
 	      if (self.isCancelled) {
 	        return callback(null, {status: 'cancelled'});
@@ -1066,12 +1056,6 @@
 	      /* istanbul ignore next */
 	      if (err) {
 	        return callback(generateErrorFromResponse(err));
-	      }
-	      var filterFun = ddoc && ddoc.filters && ddoc.filters[filterName[1]];
-	      if (!filterFun) {
-	        return callback(createError(MISSING_DOC,
-	          ((ddoc && ddoc.filters) ? 'missing json key: ' + filterName[1]
-	            : 'missing json key: filters')));
 	      }
 	      opts.filter = evalFilter(filterFun);
 	      self.doChanges(opts);
@@ -1593,6 +1577,67 @@
 	  return false;
 	}
 
+	function cacheUpdateRequired(api, cache, designDocName, callback) {
+	  cache.seq = cache.seq || 0;
+	  var changesOpts = {
+	    doc_ids: [ '_design/' + designDocName ],
+	    limit: 1,
+	    since: cache.seq
+	  };
+	  api.changes(changesOpts).then(function(res) {
+	    var latestSeq = res.results && res.results.length && res.results[0].seq;
+	    if (latestSeq && latestSeq > cache.seq) {
+	      // invalidate the cache
+	      cache.seq = latestSeq;
+	      delete cache.promise;
+	    }
+	    callback();
+	  }).catch(callback);
+	}
+
+	function getDesignDocCache(api, designDocName, callback) {
+	  api._ddocCache = api._ddocCache || {};
+	  api._ddocCache[designDocName] = api._ddocCache[designDocName] || {};
+	  var cache = api._ddocCache[designDocName];
+	  cacheUpdateRequired(api, cache, designDocName, function(err) {
+	    if (err) {
+	      return callback(err);
+	    }
+	    if (!cache.promise) {
+	      cache.promise = new PouchPromise(function (resolve, reject) {
+	        api._get('_design/' + designDocName, {}, function (err, res) {
+	          if (err) {
+	            return reject(err);
+	          }
+	          var cache = {};
+	          ['views', 'filters'].forEach(function(propertyName) {
+	            cache[propertyName] = res.doc[propertyName];
+	          });
+	          resolve(cache);
+	        });
+	      });
+	    }
+	    cache.promise.then(function(cache) {
+	      callback(null, cache);
+	    }).catch(callback);
+	  });
+	}
+
+	function getDesignDocProperty(api, designDocName, propertyName,
+	                              propertyElement, callback) {
+	  getDesignDocCache(api, designDocName, function(err, designDoc) {
+	    if (err) {
+	      return callback(err);
+	    }
+	    var element = designDoc[propertyName] &&
+	                  designDoc[propertyName][propertyElement];
+	    if (!element) {
+	      return callback(createError(MISSING_DOC));
+	    }
+	    callback(null, element);
+	  });
+	}
+
 	inherits(AbstractPouchDB, events.EventEmitter);
 
 	function AbstractPouchDB() {
@@ -1620,6 +1665,8 @@
 	    callback = args.pop();
 	    return callback(createError(NOT_AN_OBJECT));
 	  }
+
+	  /* eslint no-constant-condition: 0 */
 	  while (true) {
 	    temp = args.shift();
 	    temptype = typeof temp;
@@ -1651,10 +1698,9 @@
 
 	AbstractPouchDB.prototype.putAttachment =
 	  adapterFun('putAttachment', function (docId, attachmentId, rev,
-	                                              blob, type, callback) {
+	                                              blob, type) {
 	  var api = this;
 	  if (typeof type === 'function') {
-	    callback = type;
 	    type = blob;
 	    blob = rev;
 	    rev = null;
@@ -1766,7 +1812,7 @@
 	  }
 
 	  var count = 0;
-	  var missing = new collections.Map();
+	  var missing = new pouchdbCollections.Map();
 
 	  function addToMissing(id, revId) {
 	    if (!missing.has(id)) {
@@ -2073,6 +2119,16 @@
 	  });
 	});
 
+	AbstractPouchDB.prototype.getView =
+	  adapterFun('getView', function (designDocName, viewName, callback) {
+	  getDesignDocProperty(this, designDocName, 'views', viewName, callback);
+	});
+
+	AbstractPouchDB.prototype.getFilter =
+	  adapterFun('getFilter', function (designDocName, filterName, callback) {
+	  getDesignDocProperty(this, designDocName, 'filters', filterName, callback);
+	});
+
 	AbstractPouchDB.prototype.getAttachment =
 	  adapterFun('getAttachment', function (docId, attachmentId, opts,
 	                                              callback) {
@@ -2136,7 +2192,7 @@
 	    callback = opts;
 	    opts = {};
 	  }
-	  return new Changes$1(this, opts, callback);
+	  return new Changes(this, opts, callback);
 	};
 
 	AbstractPouchDB.prototype.close =
@@ -2272,6 +2328,7 @@
 	      if (err) {
 	        return callback(err);
 	      }
+	      self._destroyed = true;
 	      self.emit('destroyed');
 	      callback(null, resp || { 'ok': true });
 	    });
@@ -2304,13 +2361,13 @@
 	  });
 	});
 
-	function TaskQueue$1() {
+	function TaskQueue() {
 	  this.isReady = false;
 	  this.failed = false;
 	  this.queue = [];
 	}
 
-	TaskQueue$1.prototype.execute = function () {
+	TaskQueue.prototype.execute = function () {
 	  var fun;
 	  if (this.failed) {
 	    while ((fun = this.queue.shift())) {
@@ -2323,18 +2380,18 @@
 	  }
 	};
 
-	TaskQueue$1.prototype.fail = function (err) {
+	TaskQueue.prototype.fail = function (err) {
 	  this.failed = err;
 	  this.execute();
 	};
 
-	TaskQueue$1.prototype.ready = function (db) {
+	TaskQueue.prototype.ready = function (db) {
 	  this.isReady = true;
 	  this.db = db;
 	  this.execute();
 	};
 
-	TaskQueue$1.prototype.addTask = function (fun) {
+	TaskQueue.prototype.addTask = function (fun) {
 	  this.queue.push(fun);
 	  if (this.failed) {
 	    this.execute();
@@ -2365,8 +2422,6 @@
 
 	  function onDestroyed() {
 	    ctor.emit('destroyed', name);
-	    //so we don't have to sift through all dbnames
-	    ctor.emit(name, 'destroyed');
 	  }
 
 	  function onConstructorDestroyed() {
@@ -2411,7 +2466,7 @@
 	  self.auto_compaction = opts.auto_compaction;
 	  self.prefix = PouchDB.prefix;
 	  AbstractPouchDB.call(self);
-	  self.taskqueue = new TaskQueue$1();
+	  self.taskqueue = new TaskQueue();
 	  var promise = new PouchPromise(function (fulfill, reject) {
 	    callback = function (err, resp) {
 	      /* istanbul ignore if */
@@ -2549,7 +2604,7 @@
 
 	  // these are created in constructor.js, and allow us to notify each DB with
 	  // the same name that it was destroyed, via the constructor object
-	  var destructListeners = Pouch._destructionListeners = new collections.Map();
+	  var destructListeners = Pouch._destructionListeners = new pouchdbCollections.Map();
 	  Pouch.on('destroyed', function onConstructorDestroyed(name) {
 	    if (!destructListeners.has(name)) {
 	      return;
@@ -3051,9 +3106,10 @@
 
 	  var isSafari = ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1;
 	  var isIE = ua.indexOf('msie') !== -1;
+	  var isEdge = ua.indexOf('edge') !== -1;
 
 	  var shouldCacheBust = (isSafari && opts.method === 'POST') ||
-	    (isIE && opts.method === 'GET');
+	    ((isIE || isEdge) && opts.method === 'GET');
 
 	  var cache = 'cache' in opts ? opts.cache : true;
 
@@ -3191,7 +3247,7 @@
 	  }
 	}
 
-	var collate$2 = pouchCollate__default.collate;
+	var collate$1 = pouchCollate__default.collate;
 
 	var CHECKPOINT_VERSION = 1;
 	var REPLICATOR = "pouchdb";
@@ -3296,7 +3352,7 @@
 	var comparisons = {
 	  "undefined": function(targetDoc, sourceDoc) {
 	    // This is the previous comparison function
-	    if (collate$2(targetDoc.last_seq, sourceDoc.last_seq) === 0) {
+	    if (collate$1(targetDoc.last_seq, sourceDoc.last_seq) === 0) {
 	      return sourceDoc.last_seq;
 	    }
 	    /* istanbul ignore next */
@@ -3502,7 +3558,7 @@
 	  buffer.appendBinary(data);
 	}
 
-	var md5$1 = toPromise(function (data, callback) {
+	var md5 = toPromise(function (data, callback) {
 	  var inputIsString = typeof data === 'string';
 	  var len = inputIsString ? data.length : data.byteLength;
 	  var chunkSize = Math.min(MD5_CHUNK_SIZE, len);
@@ -3556,7 +3612,7 @@
 	  return PouchPromise.all([src.id(), target.id()]).then(function (res) {
 	    var queryData = res[0] + res[1] + filterFun + filterViewName +
 	      queryParams + docIds;
-	    return md5$1(queryData);
+	    return md5(queryData);
 	  }).then(function (md5sum) {
 	    // can't use straight-up md5 alphabet, because
 	    // the char '/' is interpreted as being for attachments,
@@ -3566,7 +3622,7 @@
 	  });
 	}
 
-	function isGenOne$1(rev) {
+	function isGenOne(rev) {
 	  return /^1-/.test(rev);
 	}
 
@@ -3639,7 +3695,7 @@
 	        throw new Error('cancelled');
 	      }
 	      res.rows.forEach(function (row) {
-	        if (row.deleted || !row.doc || !isGenOne$1(row.value.rev) ||
+	        if (row.deleted || !row.doc || !isGenOne(row.value.rev) ||
 	            hasAttachments(row.doc)) {
 	          // if any of these conditions apply, we need to fetch using get()
 	          return;
@@ -3657,7 +3713,7 @@
 	    // leaving the non-generation one docs to be got otherwise
 	    var ids = Object.keys(diffs).filter(function (id) {
 	      var missing = diffs[id].missing;
-	      return missing.length === 1 && isGenOne$1(missing[0]);
+	      return missing.length === 1 && isGenOne(missing[0]);
 	    });
 	    if (ids.length > 0) {
 	      return fetchRevisionOneDocs(ids);
@@ -3674,7 +3730,7 @@
 	    .then(returnDocs);
 	}
 
-	function replicate$1(src, target, opts, returnValue, result) {
+	function replicate(src, target, opts, returnValue, result) {
 	  var batches = [];               // list of batches to be processed
 	  var currentBatch;               // the batch currently being processed
 	  var pendingBatch = {
@@ -3922,7 +3978,7 @@
 	      }
 	      error.result = result;
 	      backOff(opts, returnValue, error, function () {
-	        replicate$1(src, target, opts, returnValue);
+	        replicate(src, target, opts, returnValue);
 	      });
 	    } else {
 	      result.errors = allErrors;
@@ -4183,7 +4239,7 @@
 	  var replicateRet = new Replication(opts);
 	  var srcPouch = toPouch(src, opts);
 	  var targetPouch = toPouch(target, opts);
-	  replicate$1(srcPouch, targetPouch, opts, replicateRet);
+	  replicate(srcPouch, targetPouch, opts, replicateRet);
 	  return replicateRet;
 	}
 
@@ -4192,7 +4248,7 @@
 	  toPouch: toPouch
 	};
 
-	var replicate = replication.replicate;
+	var replicate$1 = replication.replicate;
 	inherits(Sync, events.EventEmitter);
 	function sync(src, target, opts, callback) {
 	  if (typeof opts === 'function') {
@@ -4217,8 +4273,8 @@
 	  var optsPush = opts.push ? jsExtend.extend({}, opts, opts.push) : opts;
 	  var optsPull = opts.pull ? jsExtend.extend({}, opts, opts.pull) : opts;
 
-	  this.push = replicate(src, target, optsPush);
-	  this.pull = replicate(target, src, optsPull);
+	  this.push = replicate$1(src, target, optsPush);
+	  this.pull = replicate$1(target, src, optsPull);
 
 	  this.pushPaused = true;
 	  this.pullPaused = true;
@@ -4463,7 +4519,7 @@
 	// TODO: we could measure the full URL to enforce exactly 2000 chars
 	var MAX_URL_LENGTH = 1800;
 
-	var log = debug('pouchdb:http');
+	var log$1 = debug('pouchdb:http');
 	function readAttachmentsAsBlobOrBuffer(row) {
 	  var atts = row.doc && row.doc._attachments;
 	  if (!atts) {
@@ -4580,7 +4636,8 @@
 
 	  if (opts.auth || host.auth) {
 	    var nAuth = opts.auth || host.auth;
-	    var token = btoa$1(nAuth.username + ':' + nAuth.password);
+	    var str = nAuth.username + ':' + nAuth.password;
+	    var token = btoa$1(unescape(encodeURIComponent(str)));
 	    ajaxOpts.headers = ajaxOpts.headers || {};
 	    ajaxOpts.headers.Authorization = 'Basic ' + token;
 	  }
@@ -4588,7 +4645,7 @@
 	  function ajax(userOpts, options, callback) {
 	    var reqAjax = userOpts.ajax || {};
 	    var reqOpts = jsExtend.extend(clone(ajaxOpts), reqAjax, options);
-	    log(reqOpts.method + ' ' + reqOpts.url);
+	    log$1(reqOpts.method + ' ' + reqOpts.url);
 	    return utils.ajax(reqOpts, callback);
 	  }
 
@@ -4605,7 +4662,7 @@
 
 	  function adapterFun$$(name, fun) {
 	    return adapterFun(name, getArguments(function (args) {
-	      setup().then(function (res) {
+	      setup().then(function () {
 	        return fun.apply(this, args);
 	      }).catch(function(e) {
 	        var callback = args.pop();
@@ -5395,10 +5452,10 @@
 	  return true;
 	};
 
-	function TaskQueue() {
+	function TaskQueue$1() {
 	  this.promise = new PouchPromise(function (fulfill) {fulfill(); });
 	}
-	TaskQueue.prototype.add = function (promiseFactory) {
+	TaskQueue$1.prototype.add = function (promiseFactory) {
 	  this.promise = this.promise.catch(function () {
 	    // just recover
 	  }).then(function () {
@@ -5406,11 +5463,11 @@
 	  });
 	  return this.promise;
 	};
-	TaskQueue.prototype.finish = function () {
+	TaskQueue$1.prototype.finish = function () {
 	  return this.promise;
 	};
 
-	function md5(string) {
+	function md5$1(string) {
 	  return Md5.hash(string);
 	}
 
@@ -5435,7 +5492,7 @@
 	  return sourceDB.info().then(function (info) {
 
 	    var depDbName = info.db_name + '-mrview-' +
-	      (temporary ? 'temp' : md5(viewSignature));
+	      (temporary ? 'temp' : md5$1(viewSignature));
 
 	    // save the view name in the source db so it can be cleaned up if necessary
 	    // (e.g. when the _design doc is deleted, remove all associated view data)
@@ -5574,16 +5631,16 @@
 	  promisedCallback: promisedCallback$1
 	};
 
-	var collate$1 = pouchCollate__default.collate;
+	var collate$2 = pouchCollate__default.collate;
 	var toIndexableString = pouchCollate__default.toIndexableString;
 	var normalizeKey = pouchCollate__default.normalizeKey;
 	var parseIndexableString = pouchCollate__default.parseIndexableString;
-	var log$1;
+	var log$2;
 	/* istanbul ignore else */
 	if ((typeof console !== 'undefined') && (typeof console.log === 'function')) {
-	  log$1 = Function.prototype.bind.call(console.log, console);
+	  log$2 = Function.prototype.bind.call(console.log, console);
 	} else {
-	  log$1 = function () {};
+	  log$2 = function () {};
 	}
 	var callbackify = utils$1.callbackify;
 	var sequentialize = utils$1.sequentialize;
@@ -5591,7 +5648,7 @@
 	var fin = utils$1.fin;
 	var promisedCallback = utils$1.promisedCallback;
 	var persistentQueues = {};
-	var tempViewQueue = new TaskQueue();
+	var tempViewQueue = new TaskQueue$1();
 	var CHANGES_BATCH_SIZE$1 = 50;
 
 	function parseViewName(name) {
@@ -5600,7 +5657,7 @@
 	  return name.indexOf('/') === -1 ? [name, name] : name.split('/');
 	}
 
-	function isGenOne(changes) {
+	function isGenOne$1(changes) {
 	  // only return true if the current change is 1-
 	  // and there are no other leafs
 	  return changes.length === 1 && /^1-/.test(changes[0].rev);
@@ -5633,8 +5690,8 @@
 	}
 
 	function sortByKeyThenValue(x, y) {
-	  var keyCompare = collate$1(x.key, y.key);
-	  return keyCompare !== 0 ? keyCompare : collate$1(x.value, y.value);
+	  var keyCompare = collate$2(x.key, y.key);
+	  return keyCompare !== 0 ? keyCompare : collate$2(x.value, y.value);
 	}
 
 	function sliceResults(results, limit, skip) {
@@ -5793,7 +5850,7 @@
 
 	  if (typeof options[startkeyName] !== 'undefined' &&
 	    typeof options[endkeyName] !== 'undefined' &&
-	    collate$1(options[startkeyName], options[endkeyName]) > 0) {
+	    collate$2(options[startkeyName], options[endkeyName]) > 0) {
 	    throw new QueryParseError('No rows can match your key range, ' +
 	    'reverse your start_key and end_key or set {descending : true}');
 	  } else if (fun.reduce && options.reduce !== false) {
@@ -5943,7 +6000,7 @@
 	  var changes = docData.changes;
 
 	  function getMetaDoc() {
-	    if (isGenOne(changes)) {
+	    if (isGenOne$1(changes)) {
 	      // generation 1, so we can safely assume initial state
 	      // for performance reasons (avoids unnecessary GETs)
 	      return PouchPromise.resolve(defaultMetaDoc);
@@ -6034,7 +6091,7 @@
 	  var viewName = typeof view === 'string' ? view : view.name;
 	  var queue = persistentQueues[viewName];
 	  if (!queue) {
-	    queue = persistentQueues[viewName] = new TaskQueue();
+	    queue = persistentQueues[viewName] = new TaskQueue$1();
 	  }
 	  return queue;
 	}
@@ -6068,7 +6125,7 @@
 	      return origMap(doc, emit);
 	    };
 	  } else {
-	    mapFun = evalfunc(view.mapFun.toString(), emit, sum, log$1, Array.isArray,
+	    mapFun = evalfunc(view.mapFun.toString(), emit, sum, log$2, Array.isArray,
 	      JSON.parse);
 	  }
 
@@ -6080,7 +6137,7 @@
 	    };
 	  }
 
-	  var queue = new TaskQueue();
+	  var queue = new TaskQueue$1();
 	  // TODO(neojski): https://github.com/daleharvey/pouchdb/issues/1521
 
 	  return new PouchPromise(function (resolve, reject) {
@@ -6121,7 +6178,7 @@
 	            for (var j = 0, jl = mapResults.length; j < jl; j++) {
 	              var obj = mapResults[j];
 	              var complexKey = [obj.key, obj.id];
-	              if (collate$1(obj.key, lastKey) === 0) {
+	              if (collate$2(obj.key, lastKey) === 0) {
 	                complexKey.push(j); // dup key+id, so make it unique
 	              }
 	              var indexableKey = toIndexableString(complexKey);
@@ -6163,42 +6220,49 @@
 	    reduceFun = builtInReduce[view.reduceFun];
 	  } else {
 	    reduceFun = evalfunc(
-	      view.reduceFun.toString(), null, sum, log$1, Array.isArray, JSON.parse);
+	      view.reduceFun.toString(), null, sum, log$2, Array.isArray, JSON.parse);
 	  }
 
 	  var groups = [];
-	  var lvl = options.group_level;
+	  var lvl = isNaN(options.group_level) ? Number.POSITIVE_INFINITY :
+	    options.group_level;
 	  results.forEach(function (e) {
 	    var last = groups[groups.length - 1];
-	    var key = shouldGroup ? e.key : null;
+	    var groupKey = shouldGroup ? e.key : null;
 
 	    // only set group_level for array keys
-	    if (shouldGroup && Array.isArray(key) && typeof lvl === 'number') {
-	      key = key.length > lvl ? key.slice(0, lvl) : key;
+	    if (shouldGroup && Array.isArray(groupKey)) {
+	      groupKey = groupKey.slice(0, lvl);
 	    }
 
-	    if (last && collate$1(last.key[0][0], key) === 0) {
-	      last.key.push([key, e.id]);
-	      last.value.push(e.value);
+	    if (last && collate$2(last.groupKey, groupKey) === 0) {
+	      last.keys.push([e.key, e.id]);
+	      last.values.push(e.value);
 	      return;
 	    }
-	    groups.push({key: [
-	      [key, e.id]
-	    ], value: [e.value]});
+	    groups.push({
+	      keys: [[e.key, e.id]],
+	      values: [e.value],
+	      groupKey: groupKey
+	    });
 	  });
+	  results = [];
 	  for (var i = 0, len = groups.length; i < len; i++) {
 	    var e = groups[i];
-	    var reduceTry = tryCode(view.sourceDB, reduceFun, [e.key, e.value, false]);
+	    var reduceTry = tryCode(view.sourceDB, reduceFun,
+	      [e.keys, e.values, false]);
 	    if (reduceTry.error && reduceTry.error instanceof BuiltInError) {
 	      // CouchDB returns an error if a built-in errors out
 	      throw reduceTry.error;
 	    }
-	    // CouchDB just sets the value to null if a non-built-in errors out
-	    e.value = reduceTry.error ? null : reduceTry.output;
-	    e.key = e.key[0][0];
+	    results.push({
+	      // CouchDB just sets the value to null if a non-built-in errors out
+	      value: reduceTry.error ? null : reduceTry.output,
+	      key: e.groupKey
+	    });
 	  }
 	  // no total_rows/offset when reducing
-	  return {rows: sliceResults(groups, options.limit, options.skip)};
+	  return {rows: sliceResults(results, options.limit, options.skip)};
 	}
 
 	function queryView(view, opts) {
@@ -6403,6 +6467,9 @@
 
 	var viewCleanup = callbackify(function () {
 	  var db = this;
+	  if (db._ddocCache) {
+	    delete db._ddocCache;
+	  }
 	  if (db.type() === 'http') {
 	    return httpViewCleanup(db);
 	  }
@@ -6451,13 +6518,7 @@
 	    var parts = parseViewName(fullViewName);
 	    var designDocName = parts[0];
 	    var viewName = parts[1];
-	    return db.get('_design/' + designDocName).then(function (doc) {
-	      var fun = doc.views && doc.views[viewName];
-
-	      if (!fun || typeof fun.map !== 'string') {
-	        throw new NotFoundError('ddoc ' + designDocName +
-	        ' has no view named ' + viewName);
-	      }
+	    return db.getView(designDocName, viewName).then(function (fun) {
 	      checkQueryParseError(opts, fun);
 
 	      var createViewOpts = {
@@ -6515,18 +6576,6 @@
 
 	inherits(QueryParseError, Error);
 
-	function NotFoundError(message) {
-	  this.status = 404;
-	  this.name = 'not_found';
-	  this.message = message;
-	  this.error = true;
-	  try {
-	    Error.captureStackTrace(this, NotFoundError);
-	  } catch (e) {}
-	}
-
-	inherits(NotFoundError, Error);
-
 	function BuiltInError(message) {
 	  this.status = 500;
 	  this.name = 'invalid_value';
@@ -6543,6 +6592,10 @@
 	  query: query,
 	  viewCleanup: viewCleanup
 	};
+
+	function arrayBufferToBase64(buffer) {
+	  return btoa$1(arrayBufferToBinaryString(buffer));
+	}
 
 	function preprocessAttachments$1(docInfos, blobType, callback) {
 
@@ -6582,7 +6635,7 @@
 	      } else { // binary
 	        att.data = asBinary;
 	      }
-	      md5$1(asBinary).then(function (result) {
+	      md5(asBinary).then(function (result) {
 	        att.digest = 'md5-' + result;
 	        callback();
 	      });
@@ -6591,9 +6644,9 @@
 	        if (blobType === 'binary') {
 	          att.data = arrayBufferToBinaryString(buff);
 	        } else if (blobType === 'base64') {
-	          att.data = btoa$1(arrayBufferToBinaryString(buff));
+	          att.data = arrayBufferToBase64(buff);
 	        }
-	        md5$1(buff).then(function (result) {
+	        md5(buff).then(function (result) {
 	          att.digest = 'md5-' + result;
 	          att.length = buff.byteLength;
 	          callback();
@@ -6815,6 +6868,8 @@
 	function stem(tree, depth) {
 	  // First we break out the tree into a complete list of root to leaf paths
 	  var paths = rootToLeaf(tree);
+	  var maybeStem = {};
+
 	  var result;
 	  for (var i = 0, len = paths.length; i < len; i++) {
 	    // Then for each path, we cut off the start of the path based on the
@@ -6826,6 +6881,12 @@
 	      pos: path.pos + numStemmed,
 	      ids: pathToTree(stemmed, numStemmed)
 	    };
+
+	    for (var s = 0; s < numStemmed; s++) {
+	      var rev = (path.pos + s) + '-' + stemmed[s].id;
+	      maybeStem[rev] = true;
+	    }
+
 	    // Then we remerge all those flat trees together, ensuring that we dont
 	    // connect trees that would go beyond the depth limit
 	    if (result) {
@@ -6834,13 +6895,24 @@
 	      result = [stemmedNode];
 	    }
 	  }
-	  return result;
+
+	  traverseRevTree(result, function (isLeaf, pos, revHash) {
+	    // some revisions may have been removed in a branch but not in another
+	    delete maybeStem[pos + '-' + revHash];
+	  });
+
+	  return {
+	    tree: result,
+	    revs: Object.keys(maybeStem)
+	  };
 	}
 
 	function merge(tree, path, depth) {
 	  var newTree = doMerge(tree, path);
+	  var stemmed = stem(newTree.tree, depth);
 	  return {
-	    tree: stem(newTree.tree, depth),
+	    tree: stemmed.tree,
+	    stemmedRevs: stemmed.revs,
 	    conflicts: newTree.conflicts
 	  };
 	}
@@ -6902,6 +6974,7 @@
 
 	  var newRev = docInfo.metadata.rev;
 	  docInfo.metadata.rev_tree = merged.tree;
+	  docInfo.stemmedRevs = merged.stemmedRevs || [];
 	  /* istanbul ignore else */
 	  if (prev.rev_map) {
 	    docInfo.metadata.rev_map = prev.rev_map; // used only by leveldb
@@ -6964,7 +7037,7 @@
 	  }
 
 	  var newEdits = opts.new_edits;
-	  var idsToDocs = new collections.Map();
+	  var idsToDocs = new pouchdbCollections.Map();
 
 	  var docsDone = 0;
 	  var docsToDo = docInfos.length;
@@ -7019,6 +7092,7 @@
 	        // Ensure stemming applies to new writes as well
 	        var merged = merge([], currentDoc.metadata.rev_tree[0], revLimit);
 	        currentDoc.metadata.rev_tree = merged.tree;
+	        currentDoc.stemmedRevs = merged.stemmedRevs || [];
 	        insertDoc(currentDoc, resultsIdx, docWritten);
 	      }
 	    }
@@ -7065,13 +7139,29 @@
 	// Where we detect blob support
 	var DETECT_BLOB_SUPPORT_STORE = 'detect-blob-support';
 
-	function safeJsonParse(str) {
+	function slowJsonParse(str) {
 	  try {
 	    return JSON.parse(str);
 	  } catch (e) {
 	    /* istanbul ignore next */
 	    return vuvuzela.parse(str);
 	  }
+	}
+
+	function safeJsonParse(str) {
+	  // try/catch is deoptimized in V8, leading to slower
+	  // times than we'd like to have. Most documents are _not_
+	  // huge, and do not require a slower code path just to parse them.
+	  // We can be pretty sure that a document under 50000 characters
+	  // will not be so deeply nested as to throw a stack overflow error
+	  // (depends on the engine and available memory, though, so this is
+	  // just a hunch). 50000 was chosen based on the average length
+	  // of this string in our test suite, to try to find a number that covers
+	  // most of our test cases (26 over this size, 26378 under it).
+	  if (str.length < 50000) {
+	    return JSON.parse(str);
+	  }
+	  return slowJsonParse(str);
 	}
 
 	function safeJsonStringify(json) {
@@ -7190,7 +7280,7 @@
 	  }
 	}
 
-	function fetchAttachmentsIfNecessary$1(doc, opts, txn, cb) {
+	function fetchAttachmentsIfNecessary(doc, opts, txn, cb) {
 	  var attachments = Object.keys(doc._attachments || {});
 	  if (!attachments.length) {
 	    return cb && cb();
@@ -7325,7 +7415,7 @@
 	  }
 	}
 
-	function idbBulkDocs(dbOpts, req, opts, api, idb, Changes, callback) {
+	function idbBulkDocs(dbOpts, req, opts, api, idb, idbChanges, callback) {
 	  var docInfos = req.docs;
 	  var txn;
 	  var docStore;
@@ -7351,7 +7441,7 @@
 	  }
 
 	  var results = new Array(docInfos.length);
-	  var fetchedDocs = new collections.Map();
+	  var fetchedDocs = new pouchdbCollections.Map();
 	  var preconditionErrored = false;
 	  var blobType = api._meta.blobSupport ? 'blob' : 'base64';
 
@@ -7366,7 +7456,7 @@
 
 	    var stores = [
 	      DOC_STORE, BY_SEQ_STORE,
-	      ATTACH_STORE, META_STORE,
+	      ATTACH_STORE,
 	      LOCAL_STORE, ATTACH_AND_SEQ_STORE
 	    ];
 	    var txnResult = openTransactionSafely(idb, stores, 'readwrite');
@@ -7435,7 +7525,7 @@
 	      return;
 	    }
 
-	    Changes.notify(api._meta.name);
+	    idbChanges.notify(api._meta.name);
 	    api._meta.docCount += docCountDelta;
 	    callback(null, results);
 	  }
@@ -7537,7 +7627,10 @@
 	    function afterPutDoc(e) {
 	      if (isUpdate && api.auto_compaction) {
 	        autoCompact(docInfo);
+	      } else if (docInfo.stemmedRevs.length) {
+	        compactRevs(docInfo.stemmedRevs, docInfo.metadata.id, txn);
 	      }
+
 	      metadata.seq = e.target.result;
 	      // Current _rev is calculated from _rev_tree on read
 	      delete metadata.rev;
@@ -7753,7 +7846,7 @@
 	        if (opts.conflicts) {
 	          row.doc._conflicts = collectConflicts(metadata);
 	        }
-	        fetchAttachmentsIfNecessary$1(row.doc, opts, txn);
+	        fetchAttachmentsIfNecessary(row.doc, opts, txn);
 	      };
 	    }
 
@@ -7872,7 +7965,7 @@
 	  });
 	}
 
-	inherits(Changes, events.EventEmitter);
+	inherits(Changes$1, events.EventEmitter);
 
 	/* istanbul ignore next */
 	function attachBrowserEvents(self) {
@@ -7897,13 +7990,13 @@
 	  }
 	}
 
-	function Changes() {
+	function Changes$1() {
 	  events.EventEmitter.call(this);
 	  this._listeners = {};
 
 	  attachBrowserEvents(this);
 	}
-	Changes.prototype.addListener = function (dbName, id, db, opts) {
+	Changes$1.prototype.addListener = function (dbName, id, db, opts) {
 	  /* istanbul ignore if */
 	  if (this._listeners[id]) {
 	    return;
@@ -7948,7 +8041,7 @@
 	  this.on(dbName, eventFunction);
 	};
 
-	Changes.prototype.removeListener = function (dbName, id) {
+	Changes$1.prototype.removeListener = function (dbName, id) {
 	  /* istanbul ignore if */
 	  if (!(id in this._listeners)) {
 	    return;
@@ -7959,7 +8052,7 @@
 
 
 	/* istanbul ignore next */
-	Changes.prototype.notifyLocalWindows = function (dbName) {
+	Changes$1.prototype.notifyLocalWindows = function (dbName) {
 	  //do a useless change on a storage thing
 	  //in order to get other windows's listeners to activate
 	  if (isChromeApp()) {
@@ -7969,13 +8062,15 @@
 	  }
 	};
 
-	Changes.prototype.notify = function (dbName) {
+	Changes$1.prototype.notify = function (dbName) {
 	  this.emit(dbName);
 	  this.notifyLocalWindows(dbName);
 	};
 
-	var cachedDBs = {};
+	var cachedDBs = new pouchdbCollections.Map();
 	var blobSupportPromise;
+	var idbChanges = new Changes$1();
+	var openReqList = new pouchdbCollections.Map();
 
 	function IdbPouch(opts, callback) {
 	  var api = this;
@@ -8225,7 +8320,7 @@
 	  });
 
 	  api._bulkDocs = function idb_bulkDocs(req, reqOpts, callback) {
-	    idbBulkDocs(opts, req, reqOpts, api, idb, IdbPouch.Changes, callback);
+	    idbBulkDocs(opts, req, reqOpts, api, idb, idbChanges, callback);
 	  };
 
 	  // First we look up the metadata in the ids database, then we fetch the
@@ -8307,7 +8402,7 @@
 
 	  api._info = function idb_info(callback) {
 
-	    if (idb === null || !cachedDBs[dbName]) {
+	    if (idb === null || !cachedDBs.has(dbName)) {
 	      var error = new Error('db isn\'t open');
 	      error.id = 'idbNull';
 	      return callback(error);
@@ -8347,16 +8442,16 @@
 
 	    if (opts.continuous) {
 	      var id = dbName + ':' + uuid();
-	      IdbPouch.Changes.addListener(dbName, id, api, opts);
-	      IdbPouch.Changes.notify(dbName);
+	      idbChanges.addListener(dbName, id, api, opts);
+	      idbChanges.notify(dbName);
 	      return {
 	        cancel: function () {
-	          IdbPouch.Changes.removeListener(dbName, id);
+	          idbChanges.removeListener(dbName, id);
 	        }
 	      };
 	    }
 
-	    var docIds = opts.doc_ids && new collections.Set(opts.doc_ids);
+	    var docIds = opts.doc_ids && new pouchdbCollections.Set(opts.doc_ids);
 
 	    opts.since = opts.since || 0;
 	    var lastSeq = opts.since;
@@ -8378,7 +8473,7 @@
 	    var results = [];
 	    var numResults = 0;
 	    var filter = filterChange(opts);
-	    var docIdsToMetadata = new collections.Map();
+	    var docIdsToMetadata = new pouchdbCollections.Map();
 
 	    var txn;
 	    var bySeqStore;
@@ -8437,7 +8532,7 @@
 	          // process the attachment immediately
 	          // for the benefit of live listeners
 	          if (opts.attachments && opts.include_docs) {
-	            fetchAttachmentsIfNecessary$1(winningDoc, opts, txn, function () {
+	            fetchAttachmentsIfNecessary(winningDoc, opts, txn, function () {
 	              postProcessAttachments([change], opts.binary).then(function () {
 	                opts.onChange(change);
 	              });
@@ -8529,7 +8624,7 @@
 	    // https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase#close
 	    // "Returns immediately and closes the connection in a separate thread..."
 	    idb.close();
-	    delete cachedDBs[dbName];
+	    cachedDBs.delete(dbName);
 	    idb = null;
 	    callback();
 	  };
@@ -8715,20 +8810,19 @@
 	  };
 
 	  api._destroy = function (opts, callback) {
-	    IdbPouch.Changes.removeAllListeners(dbName);
+	    idbChanges.removeAllListeners(dbName);
 
 	    //Close open request for "dbName" database to fix ie delay.
-	    if (IdbPouch.openReqList[dbName] && IdbPouch.openReqList[dbName].result) {
-	      IdbPouch.openReqList[dbName].result.close();
-	      delete cachedDBs[dbName];
+	    var openReq = openReqList.get(dbName);
+	    if (openReq && openReq.result) {
+	      openReq.result.close();
+	      cachedDBs.delete(dbName);
 	    }
 	    var req = indexedDB.deleteDatabase(dbName);
 
 	    req.onsuccess = function () {
 	      //Remove open request from the list.
-	      if (IdbPouch.openReqList[dbName]) {
-	        IdbPouch.openReqList[dbName] = null;
-	      }
+	      openReqList.delete(dbName);
 	      if (hasLocalStorage() && (dbName in localStorage)) {
 	        delete localStorage[dbName];
 	      }
@@ -8738,7 +8832,7 @@
 	    req.onerror = idbError(callback);
 	  };
 
-	  var cached = cachedDBs[dbName];
+	  var cached = cachedDBs.get(dbName);
 
 	  if (cached) {
 	    idb = cached.idb;
@@ -8756,10 +8850,7 @@
 	    req = indexedDB.open(dbName, ADAPTER_VERSION);
 	  }
 
-	  if (!('openReqList' in IdbPouch)) {
-	    IdbPouch.openReqList = {};
-	  }
-	  IdbPouch.openReqList[dbName] = req;
+	  openReqList.set(dbName, req);
 
 	  req.onupgradeneeded = function (e) {
 	    var db = e.target.result;
@@ -8805,13 +8896,13 @@
 
 	    idb.onversionchange = function () {
 	      idb.close();
-	      delete cachedDBs[dbName];
+	      cachedDBs.delete(dbName);
 	    };
 
 	    idb.onabort = function (e) {
 	      console.error('Database has a global failure', e.target.error);
 	      idb.close();
-	      delete cachedDBs[dbName];
+	      cachedDBs.delete(dbName);
 	    };
 
 	    var txn = idb.transaction([
@@ -8840,10 +8931,10 @@
 	            docCount: docCount
 	          };
 
-	          cachedDBs[dbName] = {
+	          cachedDBs.set(dbName, {
 	            idb: idb,
 	            global: api._meta
-	          };
+	          });
 	          callback(null, api);
 	        }
 	      };
@@ -8891,7 +8982,7 @@
 	    };
 	  };
 
-	  req.onerror = function(e) {
+	  req.onerror = function() {
 	    var msg = 'Failed to open indexedDB, are you in private browsing mode?';
 	    console.error(msg);
 	    callback(createError(IDB_ERROR, msg));
@@ -8912,8 +9003,6 @@
 	  return !isSafari && typeof indexedDB !== 'undefined' &&
 	    typeof IDBKeyRange !== 'undefined';
 	};
-
-	IdbPouch.Changes = new Changes();
 
 	function tryStorageOption(dbName, storage) {
 	  try { // option only available in Firefox 26+
@@ -9009,6 +9098,31 @@
 	// where we store many-to-many relations between attachment
 	// digests and seqs
 	var ATTACH_AND_SEQ_STORE$1 = quote('attach-seq-store');
+
+	function createOpenDBFunction() {
+	  if (typeof sqlitePlugin !== 'undefined') {
+	    // The SQLite Plugin started deviating pretty heavily from the
+	    // standard openDatabase() function, as they started adding more features.
+	    // It's better to just use their "new" format and pass in a big ol'
+	    // options object.
+	    return sqlitePlugin.openDatabase.bind(sqlitePlugin);
+	  }
+
+	  if (typeof openDatabase !== 'undefined') {
+	    return function openDB(opts) {
+	      // Traditional WebSQL API
+	      return openDatabase(opts.name, opts.version, opts.description, opts.size);
+	    };
+	  }
+	}
+
+	function valid() {
+	  // SQLitePlugin leaks this global object, which we can use
+	  // to detect if it's installed or not. The benefit is that it's
+	  // declared immediately, before the 'deviceready' event has fired.
+	  return typeof openDatabase !== 'undefined' ||
+	    typeof SQLitePlugin !== 'undefined';
+	}
 
 	// escapeBlob and unescapeBlob are workarounds for a websql bug:
 	// https://code.google.com/p/chromium/issues/detail?id=422690
@@ -9111,7 +9225,7 @@
 	          digestsToCheck.map(function () { return '?'; }).join(',') +
 	          ')';
 	        tx.executeSql(sql, digestsToCheck, function (tx, res) {
-	          var nonOrphanedDigests = new collections.Set();
+	          var nonOrphanedDigests = new pouchdbCollections.Set();
 	          for (var i = 0; i < res.rows.length; i++) {
 	            nonOrphanedDigests.add(res.rows.item(i).digest);
 	          }
@@ -9172,25 +9286,9 @@
 	  // In Android <=4.3, this value is actually used as an
 	  // honest-to-god ceiling for data, so we need to
 	  // set it to a decently high number.
-	  var isAndroid = /Android/.test(window.navigator.userAgent);
+	  var isAndroid = typeof navigator !== 'undefined' &&
+	    /Android/.test(navigator.userAgent);
 	  return isAndroid ? 5000000 : 1; // in PhantomJS, if you use 0 it will crash
-	}
-
-	function createOpenDBFunction() {
-	  if (typeof sqlitePlugin !== 'undefined') {
-	    // The SQLite Plugin started deviating pretty heavily from the
-	    // standard openDatabase() function, as they started adding more features.
-	    // It's better to just use their "new" format and pass in a big ol'
-	    // options object.
-	    return sqlitePlugin.openDatabase.bind(sqlitePlugin);
-	  }
-
-	  if (typeof openDatabase !== 'undefined') {
-	    return function openDB(opts) {
-	      // Traditional WebSQL API
-	      return openDatabase(opts.name, opts.version, opts.description, opts.size);
-	    };
-	  }
 	}
 
 	function openDBSafely(openDBFunction, opts) {
@@ -9205,13 +9303,14 @@
 	  }
 	}
 
-	var cachedDatabases = {};
+	var cachedDatabases = new pouchdbCollections.Map();
 
 	function openDB(opts) {
-	  var cachedResult = cachedDatabases[opts.name];
+	  var cachedResult = cachedDatabases.get(opts.name);
 	  if (!cachedResult) {
 	    var openDBFun = createOpenDBFunction();
-	    cachedResult = cachedDatabases[opts.name] = openDBSafely(openDBFun, opts);
+	    cachedResult = openDBSafely(openDBFun, opts);
+	    cachedDatabases.set(opts.name, cachedResult);
 	    if (cachedResult.db) {
 	      cachedResult.db._sqlitePlugin = typeof sqlitePlugin !== 'undefined';
 	    }
@@ -9219,15 +9318,7 @@
 	  return cachedResult;
 	}
 
-	function valid() {
-	  // SQLitePlugin leaks this global object, which we can use
-	  // to detect if it's installed or not. The benefit is that it's
-	  // declared immediately, before the 'deviceready' event has fired.
-	  return typeof openDatabase !== 'undefined' ||
-	    typeof SQLitePlugin !== 'undefined';
-	}
-
-	function websqlBulkDocs(dbOpts, req, opts, api, db, Changes, callback) {
+	function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
 	  var newEdits = opts.new_edits;
 	  var userDocs = req.docs;
 
@@ -9249,14 +9340,14 @@
 
 	  var tx;
 	  var results = new Array(docInfos.length);
-	  var fetchedDocs = new collections.Map();
+	  var fetchedDocs = new pouchdbCollections.Map();
 
 	  var preconditionErrored;
 	  function complete() {
 	    if (preconditionErrored) {
 	      return callback(preconditionErrored);
 	    }
-	    Changes.notify(api._name);
+	    websqlChanges.notify(api._name);
 	    api._docCount = -1; // invalidate
 	    callback(null, results);
 	  }
@@ -9421,17 +9512,14 @@
 	      finish();
 	    }
 
-	    function autoCompact() {
-	      if (!isUpdate || !api.auto_compaction) {
-	        return; // nothing to do
-	      }
-	      var id = docInfo.metadata.id;
-	      var revsToDelete = compactTree(docInfo.metadata);
-	      compactRevs$1(revsToDelete, id, tx);
-	    }
-
 	    function dataWritten(tx, seq) {
-	      autoCompact();
+	      var id = docInfo.metadata.id;
+	      if (isUpdate && api.auto_compaction) {
+	        compactRevs$1(compactTree(docInfo.metadata), id, tx);
+	      } else if (docInfo.stemmedRevs.length) {
+	        compactRevs$1(docInfo.stemmedRevs, id, tx);
+	      }
+
 	      docInfo.metadata.seq = seq;
 	      delete docInfo.metadata.rev;
 
@@ -9443,7 +9531,6 @@
 	        : 'INSERT INTO ' + DOC_STORE$1 +
 	      ' (id, winningseq, max_seq, json) VALUES (?,?,?,?);';
 	      var metadataStr = safeJsonStringify(docInfo.metadata);
-	      var id = docInfo.metadata.id;
 	      var params = isUpdate ?
 	        [metadataStr, seq, winningRev, id] :
 	        [id, seq, seq, metadataStr];
@@ -9531,7 +9618,9 @@
 	  });
 	}
 
-	function fetchAttachmentsIfNecessary(doc, opts, api, txn, cb) {
+	var websqlChanges = new Changes$1();
+
+	function fetchAttachmentsIfNecessary$1(doc, opts, api, txn, cb) {
 	  var attachments = Object.keys(doc._attachments || {});
 	  if (!attachments.length) {
 	    return cb && cb();
@@ -10031,7 +10120,7 @@
 	  };
 
 	  api._bulkDocs = function (req, reqOpts, callback) {
-	    websqlBulkDocs(opts, req, reqOpts, api, db, WebSqlPouch.Changes, callback);
+	    websqlBulkDocs(opts, req, reqOpts, api, db, websqlChanges, callback);
 	  };
 
 	  api._get = function (id, opts, callback) {
@@ -10181,7 +10270,7 @@
 	              if (opts.conflicts) {
 	                doc.doc._conflicts = collectConflicts(metadata);
 	              }
-	              fetchAttachmentsIfNecessary(doc.doc, opts, api, tx);
+	              fetchAttachmentsIfNecessary$1(doc.doc, opts, api, tx);
 	            }
 	            if (item.deleted) {
 	              if (opts.deleted === 'ok') {
@@ -10209,11 +10298,11 @@
 
 	    if (opts.continuous) {
 	      var id = api._name + ':' + uuid();
-	      WebSqlPouch.Changes.addListener(api._name, id, api, opts);
-	      WebSqlPouch.Changes.notify(api._name);
+	      websqlChanges.addListener(api._name, id, api, opts);
+	      websqlChanges.notify(api._name);
 	      return {
 	        cancel: function () {
-	          WebSqlPouch.Changes.removeListener(api._name, id);
+	          websqlChanges.removeListener(api._name, id);
 	        }
 	      };
 	    }
@@ -10302,7 +10391,7 @@
 	              // process the attachment immediately
 	              // for the benefit of live listeners
 	              if (opts.attachments && opts.include_docs) {
-	                fetchAttachmentsIfNecessary(doc, opts, api, tx,
+	                fetchAttachmentsIfNecessary$1(doc, opts, api, tx,
 	                  reportChange(change));
 	              } else {
 	                reportChange(change)();
@@ -10500,7 +10589,7 @@
 	  };
 
 	  api._destroy = function (opts, callback) {
-	    WebSqlPouch.Changes.removeAllListeners(api._name);
+	    websqlChanges.removeAllListeners(api._name);
 	    db.transaction(function (tx) {
 	      var stores = [DOC_STORE$1, BY_SEQ_STORE$1, ATTACH_STORE$1, META_STORE$1,
 	        LOCAL_STORE$1, ATTACH_AND_SEQ_STORE$1];
@@ -10519,8 +10608,6 @@
 
 	WebSqlPouch.valid = valid;
 
-	WebSqlPouch.Changes = new Changes();
-
 	var adapters = {
 	  idb: IdbPouch,
 	  websql: WebSqlPouch
@@ -10531,7 +10618,7 @@
 	PouchDB.Errors = allErrors;
 	PouchDB.replicate = replication.replicate;
 	PouchDB.sync = sync;
-	PouchDB.version = '5.2.1'; // will be automatically supplied by build.sh
+	PouchDB.version = '5.3.0'; // will be automatically supplied by build.sh
 	PouchDB.adapter('http', HttpPouch);
 	PouchDB.adapter('https', HttpPouch);
 
@@ -10682,6 +10769,514 @@
 
 /***/ },
 /* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * This is the web browser implementation of `debug()`.
+	 *
+	 * Expose `debug()` as the module.
+	 */
+
+	exports = module.exports = __webpack_require__(5);
+	exports.log = log;
+	exports.formatArgs = formatArgs;
+	exports.save = save;
+	exports.load = load;
+	exports.useColors = useColors;
+	exports.storage = 'undefined' != typeof chrome
+	               && 'undefined' != typeof chrome.storage
+	                  ? chrome.storage.local
+	                  : localstorage();
+
+	/**
+	 * Colors.
+	 */
+
+	exports.colors = [
+	  'lightseagreen',
+	  'forestgreen',
+	  'goldenrod',
+	  'dodgerblue',
+	  'darkorchid',
+	  'crimson'
+	];
+
+	/**
+	 * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+	 * and the Firebug extension (any Firefox version) are known
+	 * to support "%c" CSS customizations.
+	 *
+	 * TODO: add a `localStorage` variable to explicitly enable/disable colors
+	 */
+
+	function useColors() {
+	  // is webkit? http://stackoverflow.com/a/16459606/376773
+	  return ('WebkitAppearance' in document.documentElement.style) ||
+	    // is firebug? http://stackoverflow.com/a/398120/376773
+	    (window.console && (console.firebug || (console.exception && console.table))) ||
+	    // is firefox >= v31?
+	    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+	    (navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31);
+	}
+
+	/**
+	 * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+	 */
+
+	exports.formatters.j = function(v) {
+	  return JSON.stringify(v);
+	};
+
+
+	/**
+	 * Colorize log arguments if enabled.
+	 *
+	 * @api public
+	 */
+
+	function formatArgs() {
+	  var args = arguments;
+	  var useColors = this.useColors;
+
+	  args[0] = (useColors ? '%c' : '')
+	    + this.namespace
+	    + (useColors ? ' %c' : ' ')
+	    + args[0]
+	    + (useColors ? '%c ' : ' ')
+	    + '+' + exports.humanize(this.diff);
+
+	  if (!useColors) return args;
+
+	  var c = 'color: ' + this.color;
+	  args = [args[0], c, 'color: inherit'].concat(Array.prototype.slice.call(args, 1));
+
+	  // the final "%c" is somewhat tricky, because there could be other
+	  // arguments passed either before or after the %c, so we need to
+	  // figure out the correct index to insert the CSS into
+	  var index = 0;
+	  var lastC = 0;
+	  args[0].replace(/%[a-z%]/g, function(match) {
+	    if ('%%' === match) return;
+	    index++;
+	    if ('%c' === match) {
+	      // we only are interested in the *last* %c
+	      // (the user may have provided their own)
+	      lastC = index;
+	    }
+	  });
+
+	  args.splice(lastC, 0, c);
+	  return args;
+	}
+
+	/**
+	 * Invokes `console.log()` when available.
+	 * No-op when `console.log` is not a "function".
+	 *
+	 * @api public
+	 */
+
+	function log() {
+	  // this hackery is required for IE8/9, where
+	  // the `console.log` function doesn't have 'apply'
+	  return 'object' === typeof console
+	    && console.log
+	    && Function.prototype.apply.call(console.log, console, arguments);
+	}
+
+	/**
+	 * Save `namespaces`.
+	 *
+	 * @param {String} namespaces
+	 * @api private
+	 */
+
+	function save(namespaces) {
+	  try {
+	    if (null == namespaces) {
+	      exports.storage.removeItem('debug');
+	    } else {
+	      exports.storage.debug = namespaces;
+	    }
+	  } catch(e) {}
+	}
+
+	/**
+	 * Load `namespaces`.
+	 *
+	 * @return {String} returns the previously persisted debug modes
+	 * @api private
+	 */
+
+	function load() {
+	  var r;
+	  try {
+	    r = exports.storage.debug;
+	  } catch(e) {}
+	  return r;
+	}
+
+	/**
+	 * Enable namespaces listed in `localStorage.debug` initially.
+	 */
+
+	exports.enable(load());
+
+	/**
+	 * Localstorage attempts to return the localstorage.
+	 *
+	 * This is necessary because safari throws
+	 * when a user disables cookies/localstorage
+	 * and you attempt to access it.
+	 *
+	 * @return {LocalStorage}
+	 * @api private
+	 */
+
+	function localstorage(){
+	  try {
+	    return window.localStorage;
+	  } catch (e) {}
+	}
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * This is the common logic for both the Node.js and web browser
+	 * implementations of `debug()`.
+	 *
+	 * Expose `debug()` as the module.
+	 */
+
+	exports = module.exports = debug;
+	exports.coerce = coerce;
+	exports.disable = disable;
+	exports.enable = enable;
+	exports.enabled = enabled;
+	exports.humanize = __webpack_require__(6);
+
+	/**
+	 * The currently active debug mode names, and names to skip.
+	 */
+
+	exports.names = [];
+	exports.skips = [];
+
+	/**
+	 * Map of special "%n" handling functions, for the debug "format" argument.
+	 *
+	 * Valid key names are a single, lowercased letter, i.e. "n".
+	 */
+
+	exports.formatters = {};
+
+	/**
+	 * Previously assigned color.
+	 */
+
+	var prevColor = 0;
+
+	/**
+	 * Previous log timestamp.
+	 */
+
+	var prevTime;
+
+	/**
+	 * Select a color.
+	 *
+	 * @return {Number}
+	 * @api private
+	 */
+
+	function selectColor() {
+	  return exports.colors[prevColor++ % exports.colors.length];
+	}
+
+	/**
+	 * Create a debugger with the given `namespace`.
+	 *
+	 * @param {String} namespace
+	 * @return {Function}
+	 * @api public
+	 */
+
+	function debug(namespace) {
+
+	  // define the `disabled` version
+	  function disabled() {
+	  }
+	  disabled.enabled = false;
+
+	  // define the `enabled` version
+	  function enabled() {
+
+	    var self = enabled;
+
+	    // set `diff` timestamp
+	    var curr = +new Date();
+	    var ms = curr - (prevTime || curr);
+	    self.diff = ms;
+	    self.prev = prevTime;
+	    self.curr = curr;
+	    prevTime = curr;
+
+	    // add the `color` if not set
+	    if (null == self.useColors) self.useColors = exports.useColors();
+	    if (null == self.color && self.useColors) self.color = selectColor();
+
+	    var args = Array.prototype.slice.call(arguments);
+
+	    args[0] = exports.coerce(args[0]);
+
+	    if ('string' !== typeof args[0]) {
+	      // anything else let's inspect with %o
+	      args = ['%o'].concat(args);
+	    }
+
+	    // apply any `formatters` transformations
+	    var index = 0;
+	    args[0] = args[0].replace(/%([a-z%])/g, function(match, format) {
+	      // if we encounter an escaped % then don't increase the array index
+	      if (match === '%%') return match;
+	      index++;
+	      var formatter = exports.formatters[format];
+	      if ('function' === typeof formatter) {
+	        var val = args[index];
+	        match = formatter.call(self, val);
+
+	        // now we need to remove `args[index]` since it's inlined in the `format`
+	        args.splice(index, 1);
+	        index--;
+	      }
+	      return match;
+	    });
+
+	    if ('function' === typeof exports.formatArgs) {
+	      args = exports.formatArgs.apply(self, args);
+	    }
+	    var logFn = enabled.log || exports.log || console.log.bind(console);
+	    logFn.apply(self, args);
+	  }
+	  enabled.enabled = true;
+
+	  var fn = exports.enabled(namespace) ? enabled : disabled;
+
+	  fn.namespace = namespace;
+
+	  return fn;
+	}
+
+	/**
+	 * Enables a debug mode by namespaces. This can include modes
+	 * separated by a colon and wildcards.
+	 *
+	 * @param {String} namespaces
+	 * @api public
+	 */
+
+	function enable(namespaces) {
+	  exports.save(namespaces);
+
+	  var split = (namespaces || '').split(/[\s,]+/);
+	  var len = split.length;
+
+	  for (var i = 0; i < len; i++) {
+	    if (!split[i]) continue; // ignore empty strings
+	    namespaces = split[i].replace(/\*/g, '.*?');
+	    if (namespaces[0] === '-') {
+	      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+	    } else {
+	      exports.names.push(new RegExp('^' + namespaces + '$'));
+	    }
+	  }
+	}
+
+	/**
+	 * Disable debug output.
+	 *
+	 * @api public
+	 */
+
+	function disable() {
+	  exports.enable('');
+	}
+
+	/**
+	 * Returns true if the given mode name is enabled, false otherwise.
+	 *
+	 * @param {String} name
+	 * @return {Boolean}
+	 * @api public
+	 */
+
+	function enabled(name) {
+	  var i, len;
+	  for (i = 0, len = exports.skips.length; i < len; i++) {
+	    if (exports.skips[i].test(name)) {
+	      return false;
+	    }
+	  }
+	  for (i = 0, len = exports.names.length; i < len; i++) {
+	    if (exports.names[i].test(name)) {
+	      return true;
+	    }
+	  }
+	  return false;
+	}
+
+	/**
+	 * Coerce `val`.
+	 *
+	 * @param {Mixed} val
+	 * @return {Mixed}
+	 * @api private
+	 */
+
+	function coerce(val) {
+	  if (val instanceof Error) return val.stack || val.message;
+	  return val;
+	}
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	/**
+	 * Helpers.
+	 */
+
+	var s = 1000;
+	var m = s * 60;
+	var h = m * 60;
+	var d = h * 24;
+	var y = d * 365.25;
+
+	/**
+	 * Parse or format the given `val`.
+	 *
+	 * Options:
+	 *
+	 *  - `long` verbose formatting [false]
+	 *
+	 * @param {String|Number} val
+	 * @param {Object} options
+	 * @return {String|Number}
+	 * @api public
+	 */
+
+	module.exports = function(val, options){
+	  options = options || {};
+	  if ('string' == typeof val) return parse(val);
+	  return options.long
+	    ? long(val)
+	    : short(val);
+	};
+
+	/**
+	 * Parse the given `str` and return milliseconds.
+	 *
+	 * @param {String} str
+	 * @return {Number}
+	 * @api private
+	 */
+
+	function parse(str) {
+	  str = '' + str;
+	  if (str.length > 10000) return;
+	  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
+	  if (!match) return;
+	  var n = parseFloat(match[1]);
+	  var type = (match[2] || 'ms').toLowerCase();
+	  switch (type) {
+	    case 'years':
+	    case 'year':
+	    case 'yrs':
+	    case 'yr':
+	    case 'y':
+	      return n * y;
+	    case 'days':
+	    case 'day':
+	    case 'd':
+	      return n * d;
+	    case 'hours':
+	    case 'hour':
+	    case 'hrs':
+	    case 'hr':
+	    case 'h':
+	      return n * h;
+	    case 'minutes':
+	    case 'minute':
+	    case 'mins':
+	    case 'min':
+	    case 'm':
+	      return n * m;
+	    case 'seconds':
+	    case 'second':
+	    case 'secs':
+	    case 'sec':
+	    case 's':
+	      return n * s;
+	    case 'milliseconds':
+	    case 'millisecond':
+	    case 'msecs':
+	    case 'msec':
+	    case 'ms':
+	      return n;
+	  }
+	}
+
+	/**
+	 * Short format for `ms`.
+	 *
+	 * @param {Number} ms
+	 * @return {String}
+	 * @api private
+	 */
+
+	function short(ms) {
+	  if (ms >= d) return Math.round(ms / d) + 'd';
+	  if (ms >= h) return Math.round(ms / h) + 'h';
+	  if (ms >= m) return Math.round(ms / m) + 'm';
+	  if (ms >= s) return Math.round(ms / s) + 's';
+	  return ms + 'ms';
+	}
+
+	/**
+	 * Long format for `ms`.
+	 *
+	 * @param {Number} ms
+	 * @return {String}
+	 * @api private
+	 */
+
+	function long(ms) {
+	  return plural(ms, d, 'day')
+	    || plural(ms, h, 'hour')
+	    || plural(ms, m, 'minute')
+	    || plural(ms, s, 'second')
+	    || ms + ' ms';
+	}
+
+	/**
+	 * Pluralization helper.
+	 */
+
+	function plural(ms, n, name) {
+	  if (ms < n) return;
+	  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
+	  return Math.ceil(ms / n) + ' ' + name + 's';
+	}
+
+
+/***/ },
+/* 7 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -10710,7 +11305,372 @@
 
 
 /***/ },
-/* 5 */
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
+	var immediate = __webpack_require__(9);
+
+	/* istanbul ignore next */
+	function INTERNAL() {}
+
+	var handlers = {};
+
+	var REJECTED = ['REJECTED'];
+	var FULFILLED = ['FULFILLED'];
+	var PENDING = ['PENDING'];
+	/* istanbul ignore else */
+	if (!process.browser) {
+	  // in which we actually take advantage of JS scoping
+	  var UNHANDLED = ['UNHANDLED'];
+	}
+
+	module.exports = exports = Promise;
+
+	function Promise(resolver) {
+	  if (typeof resolver !== 'function') {
+	    throw new TypeError('resolver must be a function');
+	  }
+	  this.state = PENDING;
+	  this.queue = [];
+	  this.outcome = void 0;
+	  /* istanbul ignore else */
+	  if (!process.browser) {
+	    this.handled = UNHANDLED;
+	  }
+	  if (resolver !== INTERNAL) {
+	    safelyResolveThenable(this, resolver);
+	  }
+	}
+
+	Promise.prototype.catch = function (onRejected) {
+	  return this.then(null, onRejected);
+	};
+	Promise.prototype.then = function (onFulfilled, onRejected) {
+	  if (typeof onFulfilled !== 'function' && this.state === FULFILLED ||
+	    typeof onRejected !== 'function' && this.state === REJECTED) {
+	    return this;
+	  }
+	  var promise = new this.constructor(INTERNAL);
+	  /* istanbul ignore else */
+	  if (!process.browser) {
+	    if (this.handled === UNHANDLED) {
+	      this.handled = null;
+	    }
+	  }
+	  if (this.state !== PENDING) {
+	    var resolver = this.state === FULFILLED ? onFulfilled : onRejected;
+	    unwrap(promise, resolver, this.outcome);
+	  } else {
+	    this.queue.push(new QueueItem(promise, onFulfilled, onRejected));
+	  }
+
+	  return promise;
+	};
+	function QueueItem(promise, onFulfilled, onRejected) {
+	  this.promise = promise;
+	  if (typeof onFulfilled === 'function') {
+	    this.onFulfilled = onFulfilled;
+	    this.callFulfilled = this.otherCallFulfilled;
+	  }
+	  if (typeof onRejected === 'function') {
+	    this.onRejected = onRejected;
+	    this.callRejected = this.otherCallRejected;
+	  }
+	}
+	QueueItem.prototype.callFulfilled = function (value) {
+	  handlers.resolve(this.promise, value);
+	};
+	QueueItem.prototype.otherCallFulfilled = function (value) {
+	  unwrap(this.promise, this.onFulfilled, value);
+	};
+	QueueItem.prototype.callRejected = function (value) {
+	  handlers.reject(this.promise, value);
+	};
+	QueueItem.prototype.otherCallRejected = function (value) {
+	  unwrap(this.promise, this.onRejected, value);
+	};
+
+	function unwrap(promise, func, value) {
+	  immediate(function () {
+	    var returnValue;
+	    try {
+	      returnValue = func(value);
+	    } catch (e) {
+	      return handlers.reject(promise, e);
+	    }
+	    if (returnValue === promise) {
+	      handlers.reject(promise, new TypeError('Cannot resolve promise with itself'));
+	    } else {
+	      handlers.resolve(promise, returnValue);
+	    }
+	  });
+	}
+
+	handlers.resolve = function (self, value) {
+	  var result = tryCatch(getThen, value);
+	  if (result.status === 'error') {
+	    return handlers.reject(self, result.value);
+	  }
+	  var thenable = result.value;
+
+	  if (thenable) {
+	    safelyResolveThenable(self, thenable);
+	  } else {
+	    self.state = FULFILLED;
+	    self.outcome = value;
+	    var i = -1;
+	    var len = self.queue.length;
+	    while (++i < len) {
+	      self.queue[i].callFulfilled(value);
+	    }
+	  }
+	  return self;
+	};
+	handlers.reject = function (self, error) {
+	  self.state = REJECTED;
+	  self.outcome = error;
+	  /* istanbul ignore else */
+	  if (!process.browser) {
+	    if (self.handled === UNHANDLED) {
+	      immediate(function () {
+	        if (self.handled === UNHANDLED) {
+	          process.emit('unhandledRejection', error, self);
+	        }
+	      });
+	    }
+	  }
+	  var i = -1;
+	  var len = self.queue.length;
+	  while (++i < len) {
+	    self.queue[i].callRejected(error);
+	  }
+	  return self;
+	};
+
+	function getThen(obj) {
+	  // Make sure we only access the accessor once as required by the spec
+	  var then = obj && obj.then;
+	  if (obj && typeof obj === 'object' && typeof then === 'function') {
+	    return function appyThen() {
+	      then.apply(obj, arguments);
+	    };
+	  }
+	}
+
+	function safelyResolveThenable(self, thenable) {
+	  // Either fulfill, reject or reject with error
+	  var called = false;
+	  function onError(value) {
+	    if (called) {
+	      return;
+	    }
+	    called = true;
+	    handlers.reject(self, value);
+	  }
+
+	  function onSuccess(value) {
+	    if (called) {
+	      return;
+	    }
+	    called = true;
+	    handlers.resolve(self, value);
+	  }
+
+	  function tryToUnwrap() {
+	    thenable(onSuccess, onError);
+	  }
+
+	  var result = tryCatch(tryToUnwrap);
+	  if (result.status === 'error') {
+	    onError(result.value);
+	  }
+	}
+
+	function tryCatch(func, value) {
+	  var out = {};
+	  try {
+	    out.value = func(value);
+	    out.status = 'success';
+	  } catch (e) {
+	    out.status = 'error';
+	    out.value = e;
+	  }
+	  return out;
+	}
+
+	exports.resolve = resolve;
+	function resolve(value) {
+	  if (value instanceof this) {
+	    return value;
+	  }
+	  return handlers.resolve(new this(INTERNAL), value);
+	}
+
+	exports.reject = reject;
+	function reject(reason) {
+	  var promise = new this(INTERNAL);
+	  return handlers.reject(promise, reason);
+	}
+
+	exports.all = all;
+	function all(iterable) {
+	  var self = this;
+	  if (Object.prototype.toString.call(iterable) !== '[object Array]') {
+	    return this.reject(new TypeError('must be an array'));
+	  }
+
+	  var len = iterable.length;
+	  var called = false;
+	  if (!len) {
+	    return this.resolve([]);
+	  }
+
+	  var values = new Array(len);
+	  var resolved = 0;
+	  var i = -1;
+	  var promise = new this(INTERNAL);
+
+	  while (++i < len) {
+	    allResolver(iterable[i], i);
+	  }
+	  return promise;
+	  function allResolver(value, i) {
+	    self.resolve(value).then(resolveFromAll, function (error) {
+	      if (!called) {
+	        called = true;
+	        handlers.reject(promise, error);
+	      }
+	    });
+	    function resolveFromAll(outValue) {
+	      values[i] = outValue;
+	      if (++resolved === len && !called) {
+	        called = true;
+	        handlers.resolve(promise, values);
+	      }
+	    }
+	  }
+	}
+
+	exports.race = race;
+	function race(iterable) {
+	  var self = this;
+	  if (Object.prototype.toString.call(iterable) !== '[object Array]') {
+	    return this.reject(new TypeError('must be an array'));
+	  }
+
+	  var len = iterable.length;
+	  var called = false;
+	  if (!len) {
+	    return this.resolve([]);
+	  }
+
+	  var i = -1;
+	  var promise = new this(INTERNAL);
+
+	  while (++i < len) {
+	    resolver(iterable[i]);
+	  }
+	  return promise;
+	  function resolver(value) {
+	    self.resolve(value).then(function (response) {
+	      if (!called) {
+	        called = true;
+	        handlers.resolve(promise, response);
+	      }
+	    }, function (error) {
+	      if (!called) {
+	        called = true;
+	        handlers.reject(promise, error);
+	      }
+	    });
+	  }
+	}
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global, process) {'use strict';
+	var Mutation = global.MutationObserver || global.WebKitMutationObserver;
+
+	var scheduleDrain;
+
+	if (process.browser) {
+	  if (Mutation) {
+	    var called = 0;
+	    var observer = new Mutation(nextTick);
+	    var element = global.document.createTextNode('');
+	    observer.observe(element, {
+	      characterData: true
+	    });
+	    scheduleDrain = function () {
+	      element.data = (called = ++called % 2);
+	    };
+	  } else if (!global.setImmediate && typeof global.MessageChannel !== 'undefined') {
+	    var channel = new global.MessageChannel();
+	    channel.port1.onmessage = nextTick;
+	    scheduleDrain = function () {
+	      channel.port2.postMessage(0);
+	    };
+	  } else if ('document' in global && 'onreadystatechange' in global.document.createElement('script')) {
+	    scheduleDrain = function () {
+
+	      // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+	      // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+	      var scriptEl = global.document.createElement('script');
+	      scriptEl.onreadystatechange = function () {
+	        nextTick();
+
+	        scriptEl.onreadystatechange = null;
+	        scriptEl.parentNode.removeChild(scriptEl);
+	        scriptEl = null;
+	      };
+	      global.document.documentElement.appendChild(scriptEl);
+	    };
+	  } else {
+	    scheduleDrain = function () {
+	      setTimeout(nextTick, 0);
+	    };
+	  }
+	} else {
+	  scheduleDrain = function () {
+	    process.nextTick(nextTick);
+	  };
+	}
+
+	var draining;
+	var queue = [];
+	//named nextTick for less confusing stack traces
+	function nextTick() {
+	  draining = true;
+	  var i, oldQueue;
+	  var len = queue.length;
+	  while (len) {
+	    oldQueue = queue;
+	    queue = [];
+	    i = -1;
+	    while (++i < len) {
+	      oldQueue[i]();
+	    }
+	    len = queue.length;
+	  }
+	  draining = false;
+	}
+
+	module.exports = immediate;
+	function immediate(task) {
+	  if (queue.push(task) === 1 && !draining) {
+	    scheduleDrain();
+	  }
+	}
+
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(2)))
+
+/***/ },
+/* 10 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -10785,7 +11745,31 @@
 
 
 /***/ },
-/* 6 */
+/* 11 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	module.exports = argsArray;
+
+	function argsArray(fun) {
+	  return function () {
+	    var len = arguments.length;
+	    if (len) {
+	      var args = [];
+	      var i = -1;
+	      while (++i < len) {
+	        args[i] = arguments[i];
+	      }
+	      return fun.call(this, args);
+	    } else {
+	      return fun.call(this, []);
+	    }
+	  };
+	}
+
+/***/ },
+/* 12 */
 /***/ function(module, exports) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -11089,539 +12073,35 @@
 
 
 /***/ },
-/* 7 */
+/* 13 */
 /***/ function(module, exports) {
 
-	'use strict';
+	// Generated by CoffeeScript 1.9.2
+	(function() {
+	  var hasProp = {}.hasOwnProperty,
+	    slice = [].slice;
 
-	module.exports = argsArray;
-
-	function argsArray(fun) {
-	  return function () {
-	    var len = arguments.length;
-	    if (len) {
-	      var args = [];
-	      var i = -1;
-	      while (++i < len) {
-	        args[i] = arguments[i];
+	  module.exports = function(source, scope) {
+	    var key, keys, value, values;
+	    keys = [];
+	    values = [];
+	    for (key in scope) {
+	      if (!hasProp.call(scope, key)) continue;
+	      value = scope[key];
+	      if (key === 'this') {
+	        continue;
 	      }
-	      return fun.call(this, args);
-	    } else {
-	      return fun.call(this, []);
+	      keys.push(key);
+	      values.push(value);
 	    }
+	    return Function.apply(null, slice.call(keys).concat([source])).apply(scope["this"], values);
 	  };
-	}
 
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * This is the web browser implementation of `debug()`.
-	 *
-	 * Expose `debug()` as the module.
-	 */
-
-	exports = module.exports = __webpack_require__(9);
-	exports.log = log;
-	exports.formatArgs = formatArgs;
-	exports.save = save;
-	exports.load = load;
-	exports.useColors = useColors;
-	exports.storage = 'undefined' != typeof chrome
-	               && 'undefined' != typeof chrome.storage
-	                  ? chrome.storage.local
-	                  : localstorage();
-
-	/**
-	 * Colors.
-	 */
-
-	exports.colors = [
-	  'lightseagreen',
-	  'forestgreen',
-	  'goldenrod',
-	  'dodgerblue',
-	  'darkorchid',
-	  'crimson'
-	];
-
-	/**
-	 * Currently only WebKit-based Web Inspectors, Firefox >= v31,
-	 * and the Firebug extension (any Firefox version) are known
-	 * to support "%c" CSS customizations.
-	 *
-	 * TODO: add a `localStorage` variable to explicitly enable/disable colors
-	 */
-
-	function useColors() {
-	  // is webkit? http://stackoverflow.com/a/16459606/376773
-	  return ('WebkitAppearance' in document.documentElement.style) ||
-	    // is firebug? http://stackoverflow.com/a/398120/376773
-	    (window.console && (console.firebug || (console.exception && console.table))) ||
-	    // is firefox >= v31?
-	    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-	    (navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31);
-	}
-
-	/**
-	 * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
-	 */
-
-	exports.formatters.j = function(v) {
-	  return JSON.stringify(v);
-	};
-
-
-	/**
-	 * Colorize log arguments if enabled.
-	 *
-	 * @api public
-	 */
-
-	function formatArgs() {
-	  var args = arguments;
-	  var useColors = this.useColors;
-
-	  args[0] = (useColors ? '%c' : '')
-	    + this.namespace
-	    + (useColors ? ' %c' : ' ')
-	    + args[0]
-	    + (useColors ? '%c ' : ' ')
-	    + '+' + exports.humanize(this.diff);
-
-	  if (!useColors) return args;
-
-	  var c = 'color: ' + this.color;
-	  args = [args[0], c, 'color: inherit'].concat(Array.prototype.slice.call(args, 1));
-
-	  // the final "%c" is somewhat tricky, because there could be other
-	  // arguments passed either before or after the %c, so we need to
-	  // figure out the correct index to insert the CSS into
-	  var index = 0;
-	  var lastC = 0;
-	  args[0].replace(/%[a-z%]/g, function(match) {
-	    if ('%%' === match) return;
-	    index++;
-	    if ('%c' === match) {
-	      // we only are interested in the *last* %c
-	      // (the user may have provided their own)
-	      lastC = index;
-	    }
-	  });
-
-	  args.splice(lastC, 0, c);
-	  return args;
-	}
-
-	/**
-	 * Invokes `console.log()` when available.
-	 * No-op when `console.log` is not a "function".
-	 *
-	 * @api public
-	 */
-
-	function log() {
-	  // this hackery is required for IE8/9, where
-	  // the `console.log` function doesn't have 'apply'
-	  return 'object' === typeof console
-	    && console.log
-	    && Function.prototype.apply.call(console.log, console, arguments);
-	}
-
-	/**
-	 * Save `namespaces`.
-	 *
-	 * @param {String} namespaces
-	 * @api private
-	 */
-
-	function save(namespaces) {
-	  try {
-	    if (null == namespaces) {
-	      exports.storage.removeItem('debug');
-	    } else {
-	      exports.storage.debug = namespaces;
-	    }
-	  } catch(e) {}
-	}
-
-	/**
-	 * Load `namespaces`.
-	 *
-	 * @return {String} returns the previously persisted debug modes
-	 * @api private
-	 */
-
-	function load() {
-	  var r;
-	  try {
-	    r = exports.storage.debug;
-	  } catch(e) {}
-	  return r;
-	}
-
-	/**
-	 * Enable namespaces listed in `localStorage.debug` initially.
-	 */
-
-	exports.enable(load());
-
-	/**
-	 * Localstorage attempts to return the localstorage.
-	 *
-	 * This is necessary because safari throws
-	 * when a user disables cookies/localstorage
-	 * and you attempt to access it.
-	 *
-	 * @return {LocalStorage}
-	 * @api private
-	 */
-
-	function localstorage(){
-	  try {
-	    return window.localStorage;
-	  } catch (e) {}
-	}
+	}).call(this);
 
 
 /***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * This is the common logic for both the Node.js and web browser
-	 * implementations of `debug()`.
-	 *
-	 * Expose `debug()` as the module.
-	 */
-
-	exports = module.exports = debug;
-	exports.coerce = coerce;
-	exports.disable = disable;
-	exports.enable = enable;
-	exports.enabled = enabled;
-	exports.humanize = __webpack_require__(10);
-
-	/**
-	 * The currently active debug mode names, and names to skip.
-	 */
-
-	exports.names = [];
-	exports.skips = [];
-
-	/**
-	 * Map of special "%n" handling functions, for the debug "format" argument.
-	 *
-	 * Valid key names are a single, lowercased letter, i.e. "n".
-	 */
-
-	exports.formatters = {};
-
-	/**
-	 * Previously assigned color.
-	 */
-
-	var prevColor = 0;
-
-	/**
-	 * Previous log timestamp.
-	 */
-
-	var prevTime;
-
-	/**
-	 * Select a color.
-	 *
-	 * @return {Number}
-	 * @api private
-	 */
-
-	function selectColor() {
-	  return exports.colors[prevColor++ % exports.colors.length];
-	}
-
-	/**
-	 * Create a debugger with the given `namespace`.
-	 *
-	 * @param {String} namespace
-	 * @return {Function}
-	 * @api public
-	 */
-
-	function debug(namespace) {
-
-	  // define the `disabled` version
-	  function disabled() {
-	  }
-	  disabled.enabled = false;
-
-	  // define the `enabled` version
-	  function enabled() {
-
-	    var self = enabled;
-
-	    // set `diff` timestamp
-	    var curr = +new Date();
-	    var ms = curr - (prevTime || curr);
-	    self.diff = ms;
-	    self.prev = prevTime;
-	    self.curr = curr;
-	    prevTime = curr;
-
-	    // add the `color` if not set
-	    if (null == self.useColors) self.useColors = exports.useColors();
-	    if (null == self.color && self.useColors) self.color = selectColor();
-
-	    var args = Array.prototype.slice.call(arguments);
-
-	    args[0] = exports.coerce(args[0]);
-
-	    if ('string' !== typeof args[0]) {
-	      // anything else let's inspect with %o
-	      args = ['%o'].concat(args);
-	    }
-
-	    // apply any `formatters` transformations
-	    var index = 0;
-	    args[0] = args[0].replace(/%([a-z%])/g, function(match, format) {
-	      // if we encounter an escaped % then don't increase the array index
-	      if (match === '%%') return match;
-	      index++;
-	      var formatter = exports.formatters[format];
-	      if ('function' === typeof formatter) {
-	        var val = args[index];
-	        match = formatter.call(self, val);
-
-	        // now we need to remove `args[index]` since it's inlined in the `format`
-	        args.splice(index, 1);
-	        index--;
-	      }
-	      return match;
-	    });
-
-	    if ('function' === typeof exports.formatArgs) {
-	      args = exports.formatArgs.apply(self, args);
-	    }
-	    var logFn = enabled.log || exports.log || console.log.bind(console);
-	    logFn.apply(self, args);
-	  }
-	  enabled.enabled = true;
-
-	  var fn = exports.enabled(namespace) ? enabled : disabled;
-
-	  fn.namespace = namespace;
-
-	  return fn;
-	}
-
-	/**
-	 * Enables a debug mode by namespaces. This can include modes
-	 * separated by a colon and wildcards.
-	 *
-	 * @param {String} namespaces
-	 * @api public
-	 */
-
-	function enable(namespaces) {
-	  exports.save(namespaces);
-
-	  var split = (namespaces || '').split(/[\s,]+/);
-	  var len = split.length;
-
-	  for (var i = 0; i < len; i++) {
-	    if (!split[i]) continue; // ignore empty strings
-	    namespaces = split[i].replace(/\*/g, '.*?');
-	    if (namespaces[0] === '-') {
-	      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-	    } else {
-	      exports.names.push(new RegExp('^' + namespaces + '$'));
-	    }
-	  }
-	}
-
-	/**
-	 * Disable debug output.
-	 *
-	 * @api public
-	 */
-
-	function disable() {
-	  exports.enable('');
-	}
-
-	/**
-	 * Returns true if the given mode name is enabled, false otherwise.
-	 *
-	 * @param {String} name
-	 * @return {Boolean}
-	 * @api public
-	 */
-
-	function enabled(name) {
-	  var i, len;
-	  for (i = 0, len = exports.skips.length; i < len; i++) {
-	    if (exports.skips[i].test(name)) {
-	      return false;
-	    }
-	  }
-	  for (i = 0, len = exports.names.length; i < len; i++) {
-	    if (exports.names[i].test(name)) {
-	      return true;
-	    }
-	  }
-	  return false;
-	}
-
-	/**
-	 * Coerce `val`.
-	 *
-	 * @param {Mixed} val
-	 * @return {Mixed}
-	 * @api private
-	 */
-
-	function coerce(val) {
-	  if (val instanceof Error) return val.stack || val.message;
-	  return val;
-	}
-
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	/**
-	 * Helpers.
-	 */
-
-	var s = 1000;
-	var m = s * 60;
-	var h = m * 60;
-	var d = h * 24;
-	var y = d * 365.25;
-
-	/**
-	 * Parse or format the given `val`.
-	 *
-	 * Options:
-	 *
-	 *  - `long` verbose formatting [false]
-	 *
-	 * @param {String|Number} val
-	 * @param {Object} options
-	 * @return {String|Number}
-	 * @api public
-	 */
-
-	module.exports = function(val, options){
-	  options = options || {};
-	  if ('string' == typeof val) return parse(val);
-	  return options.long
-	    ? long(val)
-	    : short(val);
-	};
-
-	/**
-	 * Parse the given `str` and return milliseconds.
-	 *
-	 * @param {String} str
-	 * @return {Number}
-	 * @api private
-	 */
-
-	function parse(str) {
-	  str = '' + str;
-	  if (str.length > 10000) return;
-	  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
-	  if (!match) return;
-	  var n = parseFloat(match[1]);
-	  var type = (match[2] || 'ms').toLowerCase();
-	  switch (type) {
-	    case 'years':
-	    case 'year':
-	    case 'yrs':
-	    case 'yr':
-	    case 'y':
-	      return n * y;
-	    case 'days':
-	    case 'day':
-	    case 'd':
-	      return n * d;
-	    case 'hours':
-	    case 'hour':
-	    case 'hrs':
-	    case 'hr':
-	    case 'h':
-	      return n * h;
-	    case 'minutes':
-	    case 'minute':
-	    case 'mins':
-	    case 'min':
-	    case 'm':
-	      return n * m;
-	    case 'seconds':
-	    case 'second':
-	    case 'secs':
-	    case 'sec':
-	    case 's':
-	      return n * s;
-	    case 'milliseconds':
-	    case 'millisecond':
-	    case 'msecs':
-	    case 'msec':
-	    case 'ms':
-	      return n;
-	  }
-	}
-
-	/**
-	 * Short format for `ms`.
-	 *
-	 * @param {Number} ms
-	 * @return {String}
-	 * @api private
-	 */
-
-	function short(ms) {
-	  if (ms >= d) return Math.round(ms / d) + 'd';
-	  if (ms >= h) return Math.round(ms / h) + 'h';
-	  if (ms >= m) return Math.round(ms / m) + 'm';
-	  if (ms >= s) return Math.round(ms / s) + 's';
-	  return ms + 'ms';
-	}
-
-	/**
-	 * Long format for `ms`.
-	 *
-	 * @param {Number} ms
-	 * @return {String}
-	 * @api private
-	 */
-
-	function long(ms) {
-	  return plural(ms, d, 'day')
-	    || plural(ms, h, 'hour')
-	    || plural(ms, m, 'minute')
-	    || plural(ms, s, 'second')
-	    || ms + ' ms';
-	}
-
-	/**
-	 * Pluralization helper.
-	 */
-
-	function plural(ms, n, name) {
-	  if (ms < n) return;
-	  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
-	  return Math.ceil(ms / n) + ' ' + name + 's';
-	}
-
-
-/***/ },
-/* 11 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -11630,7 +12110,7 @@
 	var MAGNITUDE_DIGITS = 3; // ditto
 	var SEP = ''; // set to '_' for easier debugging 
 
-	var utils = __webpack_require__(12);
+	var utils = __webpack_require__(15);
 
 	exports.collate = function (a, b) {
 
@@ -11980,7 +12460,7 @@
 
 
 /***/ },
-/* 12 */
+/* 15 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12053,399 +12533,6 @@
 
 	  return result;
 	};
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
-	var immediate = __webpack_require__(14);
-
-	/* istanbul ignore next */
-	function INTERNAL() {}
-
-	var handlers = {};
-
-	var REJECTED = ['REJECTED'];
-	var FULFILLED = ['FULFILLED'];
-	var PENDING = ['PENDING'];
-	/* istanbul ignore else */
-	if (!process.browser) {
-	  // in which we actually take advantage of JS scoping
-	  var UNHANDLED = ['UNHANDLED'];
-	}
-
-	module.exports = exports = Promise;
-
-	function Promise(resolver) {
-	  if (typeof resolver !== 'function') {
-	    throw new TypeError('resolver must be a function');
-	  }
-	  this.state = PENDING;
-	  this.queue = [];
-	  this.outcome = void 0;
-	  /* istanbul ignore else */
-	  if (!process.browser) {
-	    this.handled = UNHANDLED;
-	  }
-	  if (resolver !== INTERNAL) {
-	    safelyResolveThenable(this, resolver);
-	  }
-	}
-
-	Promise.prototype.catch = function (onRejected) {
-	  return this.then(null, onRejected);
-	};
-	Promise.prototype.then = function (onFulfilled, onRejected) {
-	  if (typeof onFulfilled !== 'function' && this.state === FULFILLED ||
-	    typeof onRejected !== 'function' && this.state === REJECTED) {
-	    return this;
-	  }
-	  var promise = new this.constructor(INTERNAL);
-	  /* istanbul ignore else */
-	  if (!process.browser) {
-	    if (this.handled === UNHANDLED) {
-	      this.handled = null;
-	    }
-	  }
-	  if (this.state !== PENDING) {
-	    var resolver = this.state === FULFILLED ? onFulfilled : onRejected;
-	    unwrap(promise, resolver, this.outcome);
-	  } else {
-	    this.queue.push(new QueueItem(promise, onFulfilled, onRejected));
-	  }
-
-	  return promise;
-	};
-	function QueueItem(promise, onFulfilled, onRejected) {
-	  this.promise = promise;
-	  if (typeof onFulfilled === 'function') {
-	    this.onFulfilled = onFulfilled;
-	    this.callFulfilled = this.otherCallFulfilled;
-	  }
-	  if (typeof onRejected === 'function') {
-	    this.onRejected = onRejected;
-	    this.callRejected = this.otherCallRejected;
-	  }
-	}
-	QueueItem.prototype.callFulfilled = function (value) {
-	  handlers.resolve(this.promise, value);
-	};
-	QueueItem.prototype.otherCallFulfilled = function (value) {
-	  unwrap(this.promise, this.onFulfilled, value);
-	};
-	QueueItem.prototype.callRejected = function (value) {
-	  handlers.reject(this.promise, value);
-	};
-	QueueItem.prototype.otherCallRejected = function (value) {
-	  unwrap(this.promise, this.onRejected, value);
-	};
-
-	function unwrap(promise, func, value) {
-	  immediate(function () {
-	    var returnValue;
-	    try {
-	      returnValue = func(value);
-	    } catch (e) {
-	      return handlers.reject(promise, e);
-	    }
-	    if (returnValue === promise) {
-	      handlers.reject(promise, new TypeError('Cannot resolve promise with itself'));
-	    } else {
-	      handlers.resolve(promise, returnValue);
-	    }
-	  });
-	}
-
-	handlers.resolve = function (self, value) {
-	  var result = tryCatch(getThen, value);
-	  if (result.status === 'error') {
-	    return handlers.reject(self, result.value);
-	  }
-	  var thenable = result.value;
-
-	  if (thenable) {
-	    safelyResolveThenable(self, thenable);
-	  } else {
-	    self.state = FULFILLED;
-	    self.outcome = value;
-	    var i = -1;
-	    var len = self.queue.length;
-	    while (++i < len) {
-	      self.queue[i].callFulfilled(value);
-	    }
-	  }
-	  return self;
-	};
-	handlers.reject = function (self, error) {
-	  self.state = REJECTED;
-	  self.outcome = error;
-	  /* istanbul ignore else */
-	  if (!process.browser) {
-	    if (self.handled === UNHANDLED) {
-	      immediate(function () {
-	        if (self.handled === UNHANDLED) {
-	          process.emit('unhandledRejection', error, self);
-	        }
-	      });
-	    }
-	  }
-	  var i = -1;
-	  var len = self.queue.length;
-	  while (++i < len) {
-	    self.queue[i].callRejected(error);
-	  }
-	  return self;
-	};
-
-	function getThen(obj) {
-	  // Make sure we only access the accessor once as required by the spec
-	  var then = obj && obj.then;
-	  if (obj && typeof obj === 'object' && typeof then === 'function') {
-	    return function appyThen() {
-	      then.apply(obj, arguments);
-	    };
-	  }
-	}
-
-	function safelyResolveThenable(self, thenable) {
-	  // Either fulfill, reject or reject with error
-	  var called = false;
-	  function onError(value) {
-	    if (called) {
-	      return;
-	    }
-	    called = true;
-	    handlers.reject(self, value);
-	  }
-
-	  function onSuccess(value) {
-	    if (called) {
-	      return;
-	    }
-	    called = true;
-	    handlers.resolve(self, value);
-	  }
-
-	  function tryToUnwrap() {
-	    thenable(onSuccess, onError);
-	  }
-
-	  var result = tryCatch(tryToUnwrap);
-	  if (result.status === 'error') {
-	    onError(result.value);
-	  }
-	}
-
-	function tryCatch(func, value) {
-	  var out = {};
-	  try {
-	    out.value = func(value);
-	    out.status = 'success';
-	  } catch (e) {
-	    out.status = 'error';
-	    out.value = e;
-	  }
-	  return out;
-	}
-
-	exports.resolve = resolve;
-	function resolve(value) {
-	  if (value instanceof this) {
-	    return value;
-	  }
-	  return handlers.resolve(new this(INTERNAL), value);
-	}
-
-	exports.reject = reject;
-	function reject(reason) {
-	  var promise = new this(INTERNAL);
-	  return handlers.reject(promise, reason);
-	}
-
-	exports.all = all;
-	function all(iterable) {
-	  var self = this;
-	  if (Object.prototype.toString.call(iterable) !== '[object Array]') {
-	    return this.reject(new TypeError('must be an array'));
-	  }
-
-	  var len = iterable.length;
-	  var called = false;
-	  if (!len) {
-	    return this.resolve([]);
-	  }
-
-	  var values = new Array(len);
-	  var resolved = 0;
-	  var i = -1;
-	  var promise = new this(INTERNAL);
-
-	  while (++i < len) {
-	    allResolver(iterable[i], i);
-	  }
-	  return promise;
-	  function allResolver(value, i) {
-	    self.resolve(value).then(resolveFromAll, function (error) {
-	      if (!called) {
-	        called = true;
-	        handlers.reject(promise, error);
-	      }
-	    });
-	    function resolveFromAll(outValue) {
-	      values[i] = outValue;
-	      if (++resolved === len && !called) {
-	        called = true;
-	        handlers.resolve(promise, values);
-	      }
-	    }
-	  }
-	}
-
-	exports.race = race;
-	function race(iterable) {
-	  var self = this;
-	  if (Object.prototype.toString.call(iterable) !== '[object Array]') {
-	    return this.reject(new TypeError('must be an array'));
-	  }
-
-	  var len = iterable.length;
-	  var called = false;
-	  if (!len) {
-	    return this.resolve([]);
-	  }
-
-	  var i = -1;
-	  var promise = new this(INTERNAL);
-
-	  while (++i < len) {
-	    resolver(iterable[i]);
-	  }
-	  return promise;
-	  function resolver(value) {
-	    self.resolve(value).then(function (response) {
-	      if (!called) {
-	        called = true;
-	        handlers.resolve(promise, response);
-	      }
-	    }, function (error) {
-	      if (!called) {
-	        called = true;
-	        handlers.reject(promise, error);
-	      }
-	    });
-	  }
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global, process) {'use strict';
-	var Mutation = global.MutationObserver || global.WebKitMutationObserver;
-
-	var scheduleDrain;
-
-	if (process.browser) {
-	  if (Mutation) {
-	    var called = 0;
-	    var observer = new Mutation(nextTick);
-	    var element = global.document.createTextNode('');
-	    observer.observe(element, {
-	      characterData: true
-	    });
-	    scheduleDrain = function () {
-	      element.data = (called = ++called % 2);
-	    };
-	  } else if (!global.setImmediate && typeof global.MessageChannel !== 'undefined') {
-	    var channel = new global.MessageChannel();
-	    channel.port1.onmessage = nextTick;
-	    scheduleDrain = function () {
-	      channel.port2.postMessage(0);
-	    };
-	  } else if ('document' in global && 'onreadystatechange' in global.document.createElement('script')) {
-	    scheduleDrain = function () {
-
-	      // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
-	      // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
-	      var scriptEl = global.document.createElement('script');
-	      scriptEl.onreadystatechange = function () {
-	        nextTick();
-
-	        scriptEl.onreadystatechange = null;
-	        scriptEl.parentNode.removeChild(scriptEl);
-	        scriptEl = null;
-	      };
-	      global.document.documentElement.appendChild(scriptEl);
-	    };
-	  } else {
-	    scheduleDrain = function () {
-	      setTimeout(nextTick, 0);
-	    };
-	  }
-	} else {
-	  scheduleDrain = function () {
-	    process.nextTick(nextTick);
-	  };
-	}
-
-	var draining;
-	var queue = [];
-	//named nextTick for less confusing stack traces
-	function nextTick() {
-	  draining = true;
-	  var i, oldQueue;
-	  var len = queue.length;
-	  while (len) {
-	    oldQueue = queue;
-	    queue = [];
-	    i = -1;
-	    while (++i < len) {
-	      oldQueue[i]();
-	    }
-	    len = queue.length;
-	  }
-	  draining = false;
-	}
-
-	module.exports = immediate;
-	function immediate(task) {
-	  if (queue.push(task) === 1 && !draining) {
-	    scheduleDrain();
-	  }
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(2)))
-
-/***/ },
-/* 15 */
-/***/ function(module, exports) {
-
-	// Generated by CoffeeScript 1.9.2
-	(function() {
-	  var hasProp = {}.hasOwnProperty,
-	    slice = [].slice;
-
-	  module.exports = function(source, scope) {
-	    var key, keys, value, values;
-	    keys = [];
-	    values = [];
-	    for (key in scope) {
-	      if (!hasProp.call(scope, key)) continue;
-	      value = scope[key];
-	      if (key === 'this') {
-	        continue;
-	      }
-	      keys.push(key);
-	      values.push(value);
-	    }
-	    return Function.apply(null, slice.call(keys).concat([source])).apply(scope["this"], values);
-	  };
-
-	}).call(this);
-
 
 /***/ },
 /* 16 */
@@ -42761,6 +42848,9 @@
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 	exports.folderNameFromOpts = folderNameFromOpts;
+	exports.isQuery = isQuery;
+	exports.getListFunction = getListFunction;
+	exports.getListParams = getListParams;
 	exports.createListAction = createListAction;
 	exports.createMapStateToPropsList = createMapStateToPropsList;
 	exports.connectList = connectList;
@@ -42797,40 +42887,43 @@
 	  return JSON.stringify(options);
 	}
 
+	function isQuery(opts) {
+	  return opts.options && opts.options.fun;
+	}
+
+	function getListFunction(crud, opts) {
+	  if (isQuery(opts)) {
+	    return crud.actions.query.bind(null, opts.options.fun);
+	  } else {
+	    return crud.actions.allDocs;
+	  }
+	}
+
+	function getListParams(crud, opts) {
+	  var initialParams = {};
+
+	  if (!isQuery(opts)) {
+	    Object.assign(initialParams, {
+	      startkey: crud.startkey,
+	      endkey: crud.endkey
+	    });
+	  }
+
+	  var params = _extends({
+	    include_docs: true,
+	    attachments: true
+	  }, initialParams, opts.options);
+
+	  return params;
+	}
+
 	function createListAction(crud, folder) {
 	  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 	  var folderVars = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
-	  var _opts$options = opts.options;
-	  var options = _opts$options === undefined ? {} : _opts$options;
 
-	  if (opts.queryFunc) {
-	    return function () {
-	      return (0, _actions.createPromiseAction)(function () {
-	        return opts.queryFunc(options);
-	      }, crud.actionTypes.query, _extends({}, folderVars, { folder: folder }));
-	    };
-	  } else if (options.fun) {
-	    var _ret = (function () {
-	      var fun = options.fun;
-
-	      var queryOptions = _objectWithoutProperties(options, ['fun']);
-
-	      return {
-	        v: function () {
-	          return crud.actions.query(fun, folder, queryOptions, folderVars);
-	        }
-	      };
-	    })();
-
-	    if (typeof _ret === 'object') return _ret.v;
-	  } else {
-	    return function () {
-	      return crud.actions.allDocs(folder, _extends({
-	        startkey: crud.mountPoint + '-',
-	        endkey: crud.mountPoint + '-￿'
-	      }, options), folderVars);
-	    };
-	  }
+	  var funName = getListFunction(crud, opts);
+	  var funParams = getListParams(crud, opts);
+	  return funName(folder, funParams, folderVars);
 	}
 
 	function createMapStateToPropsList(crud, opts, mapStateToProps) {
@@ -42844,15 +42937,16 @@
 	    var folder = finalOpts.folder;
 	    var _finalOpts$propName = finalOpts.propName;
 	    var propName = _finalOpts$propName === undefined ? 'items' : _finalOpts$propName;
-	    var queryFunc = finalOpts.queryFunc;
 
-	    var folderVars = _objectWithoutProperties(finalOpts, ['options', 'folder', 'propName', 'queryFunc']);
+	    var folderVars = _objectWithoutProperties(finalOpts, ['options', 'folder', 'propName']);
 
 	    var toFolder = folder || folderNameFromOpts(options);
 
 	    Object.assign(props, createMapStateToProps(crud.mountPoint, toFolder, propName)(state));
 
-	    props.action = createListAction(crud, toFolder, finalOpts, folderVars);
+	    props.action = function () {
+	      return createListAction(crud, toFolder, finalOpts, folderVars);
+	    };
 	    return props;
 	  };
 	}
@@ -42873,6 +42967,9 @@
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	exports.toList = toList;
 	exports.findDocById = findDocById;
 	exports.findDoc = findDoc;
@@ -42896,6 +42993,8 @@
 	exports.createActionType = createActionType;
 	exports.markDocumentDeleted = markDocumentDeleted;
 	exports.createDetailLink = createDetailLink;
+
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
 	var _immutable = __webpack_require__(311);
 
@@ -43019,10 +43118,14 @@
 	}
 
 	function setQueryPayloadInState(state, folder, payload, folderVars) {
-	  var ids = (0, _immutable.List)(payload.rows.map(function (row) {
+	  var rows = payload.rows;
+
+	  var folderVarsFromQuery = _objectWithoutProperties(payload, ['rows']);
+
+	  var ids = (0, _immutable.List)(rows.map(function (row) {
 	    return row.id;
 	  }));
-	  return setDocuments(saveFolderVars(saveIdsInFolder(state, folder, ids), folder, folderVars), payload.rows);
+	  return setDocuments(saveFolderVars(saveIdsInFolder(state, folder, ids), folder, _extends({}, folderVarsFromQuery, folderVars)), payload.rows);
 	}
 
 	/*
@@ -48345,7 +48448,6 @@
 	var singleObjectMapStateToProps = function singleObjectMapStateToProps(mountPoint, propName) {
 	  return function singleObjectMapStateToProps(state, ownProps) {
 	    var id = ownProps.docId;
-	    debugger;
 	    return _defineProperty({
 	      id: id
 	    }, propName, utils.getObjectFromState(state, mountPoint, id));
@@ -48683,7 +48785,12 @@
 	  prefix = prefix || mountPoint;
 	  var urlPrefix = '/' + prefix;
 
-	  var defaultOpts = opts;
+	  var defaultStartkey = mountPoint + '-';
+	  var defaultEndkey = mountPoint + '-￿';
+	  var _opts$startkey = opts.startkey;
+	  var startkey = _opts$startkey === undefined ? defaultStartkey : _opts$startkey;
+	  var _opts$endkey = opts.endkey;
+	  var endkey = _opts$endkey === undefined ? defaultEndkey : _opts$endkey;
 
 	  var actionTypes = {};
 	  for (var action in _constants.ACTIONS) {
@@ -48784,7 +48891,9 @@
 	    mountPoint: mountPoint,
 	    paths: paths,
 	    urlPrefix: urlPrefix,
-	    db: db
+	    db: db,
+	    startkey: startkey,
+	    endkey: endkey
 	  };
 	}
 
@@ -48822,13 +48931,20 @@
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	exports.paginationFolderSuffix = paginationFolderSuffix;
+	exports.getPaginationListParams = getPaginationListParams;
+	exports.paginateQuery = paginateQuery;
 	exports.createMapStateToPropsPagination = createMapStateToPropsPagination;
 	exports['default'] = paginate;
 
-	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+	var _actions = __webpack_require__(312);
 
-	var _containers = __webpack_require__(308);
+	var _containersList = __webpack_require__(309);
+
+	var _containersCommon = __webpack_require__(313);
 
 	var defaultOpts = {
 	  rowsPerPage: 10
@@ -48840,43 +48956,85 @@
 	  return '/page/' + rowsPerPage + '/' + (startkey || '');
 	}
 
+	// add limit, startkey to list params
+
+	function getPaginationListParams(listParams, opts, rowsPerPage, startkey) {
+	  var finalStartkey = startkey || opts.options && opts.options.startkey;
+	  return Object.assign({}, listParams, { limit: rowsPerPage + 1 }, startkey ? { startkey: finalStartkey } : null);
+	}
+
+	function paginateQuery(crud, opts, rowsPerPage, startkey) {
+	  var fun = undefined;
+	  var listParams = (0, _containersList.getListParams)(crud, opts);
+	  var funParams = getPaginationListParams(listParams, opts, rowsPerPage, startkey);
+	  if ((0, _containersList.isQuery)(opts)) {
+	    fun = crud.db.query.bind(crud.db, opts.options.fun);
+	  } else {
+	    fun = crud.db.allDocs.bind(crud.db);
+	  }
+
+	  return fun(funParams).then(function (payload) {
+	    //assign next page starting id
+	    if (payload.rows[rowsPerPage]) {
+	      var lastRow = payload.rows.pop();
+	      payload.next = lastRow.id;
+	    }
+	    // create reversedParams from funParams
+	    var reversedParams = _extends({}, funParams, {
+	      startkey: payload.rows[0].id,
+	      endkey: listParams.startkey,
+	      limit: rowsPerPage,
+	      skip: 1,
+	      descending: true
+	    });
+	    return fun(reversedParams).then(function (r) {
+	      var firstRow = r.rows.pop();
+	      if (firstRow) {
+	        payload.prev = firstRow.id;
+	      }
+	      return payload;
+	    });
+	  });
+	}
+
 	function createMapStateToPropsPagination(paginationOpts, crud, opts, mapStateToProps) {
 	  if (paginationOpts === undefined) paginationOpts = {};
 	  if (opts === undefined) opts = {};
 
 	  return function (state, ownProps) {
 	    var props = mapStateToProps ? mapStateToProps(state, ownProps) : {};
+	    // rowsPerPage and startkey can be given in mapStateToProps,
+	    // paginationOpts or defaultOpts
 
-	    var _Object$assign = Object.assign({}, defaultOpts, paginationOpts, props);
+	    var _Object$assign = Object.assign(defaultOpts, paginationOpts, props);
 
 	    var rowsPerPage = _Object$assign.rowsPerPage;
 	    var startkey = _Object$assign.startkey;
-	    var prevStartkey = _Object$assign.prevStartkey;
 
-	    var finalOpts = Object.assign({}, opts, props.listOpts);
-	    var _finalOpts$options = finalOpts.options;
-	    var options = _finalOpts$options === undefined ? {} : _finalOpts$options;
-	    var folder = finalOpts.folder;
-	    var _finalOpts$propName = finalOpts.propName;
-	    var propName = _finalOpts$propName === undefined ? 'items' : _finalOpts$propName;
-	    var queryFunc = finalOpts.queryFunc;
-
-	    var folderVars = _objectWithoutProperties(finalOpts, ['options', 'folder', 'propName', 'queryFunc']);
-
-	    finalOpts.options = Object.assign({}, finalOpts.options, { limit: rowsPerPage + 1, startkey: startkey });
-	    var paginatedFolderVars = Object.assign(folderVars, { prevStartkey: prevStartkey, rowsPerPage: rowsPerPage });
-	    var toFolder = (folder || (0, _containers.folderNameFromOpts)(options)) + paginationFolderSuffix(rowsPerPage, startkey);
-
-	    Object.assign(props, (0, _containers.createMapStateToProps)(crud.mountPoint, toFolder, propName)(state));
-
-	    props.action = (0, _containers.createListAction)(crud, toFolder, finalOpts, paginatedFolderVars);
+	    // finalOpts from argument opts or from mapStateToProps
+	    var finalOpts = Object.assign(opts, props.listOpts);
+	    // set pouchdb options with pagination related things
+	    finalOpts.options = Object.assign({}, finalOpts.options, {
+	      limit: rowsPerPage + 1,
+	      startkey: startkey
+	    });
+	    var toFolder = (finalOpts.folder || (0, _containersList.folderNameFromOpts)(finalOpts.options)) + paginationFolderSuffix(rowsPerPage, startkey);
+	    var propName = finalOpts.propName || 'items';
+	    // add documents, folderVars to props
+	    Object.assign(props, (0, _containersList.createMapStateToProps)(crud.mountPoint, toFolder, propName)(state));
+	    // assign action that loads items from db
+	    props.action = function () {
+	      return (0, _actions.createPromiseAction)(function () {
+	        return paginateQuery(crud, toFolder, rowsPerPage, startkey);
+	      }, crud.actionTypes.query, { folder: toFolder });
+	    };
 	    return props;
 	  };
 	}
 
 	function paginate(paginationOpts, crud, connectListOpts, mapStateToProps, mapDispatchToProps) {
 	  var mapStateToPropsFinal = createMapStateToPropsPagination(paginationOpts, crud, connectListOpts, mapStateToProps);
-	  return (0, _containers.wrap)(mapStateToPropsFinal, mapDispatchToProps);
+	  return (0, _containersCommon.wrap)(mapStateToPropsFinal, mapDispatchToProps);
 	}
 
 /***/ },
@@ -49026,9 +49184,26 @@
 	exports.ProjectList = ProjectList;
 	var ProjectTable = function ProjectTable(_ref3) {
 	  var items = _ref3.items;
+	  var _ref3$columns = _ref3.columns;
+	  var columns = _ref3$columns === undefined ? ['name'] : _ref3$columns;
 	  return _react2['default'].createElement(
 	    'table',
-	    { className: 'table' },
+	    { className: 'table table-hove ' },
+	    _react2['default'].createElement(
+	      'thead',
+	      null,
+	      _react2['default'].createElement(
+	        'tr',
+	        null,
+	        columns.map(function (column) {
+	          return _react2['default'].createElement(
+	            'th',
+	            { key: column },
+	            column
+	          );
+	        })
+	      )
+	    ),
 	    _react2['default'].createElement(
 	      'tbody',
 	      null,
@@ -49036,11 +49211,13 @@
 	        return _react2['default'].createElement(
 	          'tr',
 	          { key: item.get('_id') },
-	          _react2['default'].createElement(
-	            'td',
-	            null,
-	            item.get('name')
-	          )
+	          columns.map(function (column) {
+	            return _react2['default'].createElement(
+	              'td',
+	              { key: column },
+	              item.get(column)
+	            );
+	          })
 	        );
 	      })
 	    )
@@ -49050,32 +49227,43 @@
 	exports.ProjectTable = ProjectTable;
 	// linked list style pagination component
 	var Navigation = function Navigation(_ref4) {
-	  var current = _ref4.current;
 	  var next = _ref4.next;
 	  var prev = _ref4.prev;
 
 	  var nextLink = next ? _react2['default'].createElement(
 	    _reactRouter.Link,
-	    { to: '?start=' + next + '&prev=' + current },
+	    { to: '?start=' + next },
 	    'Next page'
-	  ) : 'Next page';
+	  ) : _react2['default'].createElement(
+	    'span',
+	    null,
+	    'Next page'
+	  );
 	  var prevLink = prev ? _react2['default'].createElement(
 	    _reactRouter.Link,
 	    { to: '?start=' + prev },
 	    'Previous page'
-	  ) : 'Previous page';
+	  ) : _react2['default'].createElement(
+	    'span',
+	    null,
+	    'Previous page'
+	  );
 	  return _react2['default'].createElement(
-	    'ul',
-	    { className: 'pager' },
+	    'nav',
+	    null,
 	    _react2['default'].createElement(
-	      'li',
-	      { className: 'previous' + (prev ? '' : ' disabled') },
-	      prevLink
-	    ),
-	    _react2['default'].createElement(
-	      'li',
-	      { className: 'next' + (next ? '' : ' disabled') },
-	      nextLink
+	      'ul',
+	      { className: 'pager' },
+	      _react2['default'].createElement(
+	        'li',
+	        { className: prev ? '' : 'disabled' },
+	        prevLink
+	      ),
+	      _react2['default'].createElement(
+	        'li',
+	        { className: next ? '' : 'disabled' },
+	        nextLink
+	      )
 	    )
 	  );
 	};

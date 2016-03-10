@@ -46,11 +46,15 @@
 
 	'use strict';
 
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -58,17 +62,17 @@
 
 	var _pouchdb2 = _interopRequireDefault(_pouchdb);
 
+	var _pouchdbLoad = __webpack_require__(462);
+
+	var _pouchdbLoad2 = _interopRequireDefault(_pouchdbLoad);
+
 	var _react = __webpack_require__(18);
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactRedux = __webpack_require__(174);
-
-	var _reduxRouter = __webpack_require__(194);
-
 	var _reactRouter = __webpack_require__(198);
 
-	var _reduxForm = __webpack_require__(259);
+	var _reactRedux = __webpack_require__(174);
 
 	var _pouchdbReduxHelper = __webpack_require__(306);
 
@@ -78,68 +82,81 @@
 
 	var _exampleApp2 = _interopRequireDefault(_exampleApp);
 
-	var db = (0, _pouchdb2['default'])('testdb');
-	var projectsCrud = (0, _pouchdbReduxHelper.createCRUD)(db, 'projects');
-	var reducers = _defineProperty({}, projectsCrud.mountPoint, projectsCrud.reducer);
+	_pouchdb2['default'].plugin(_pouchdbLoad2['default']);
 
-	var onSubmit = _pouchdbReduxHelper.containers.createOnSubmitHandler(projectsCrud);
-	var redirectToList = function redirectToList(fun, item, data, dispatch) {
-	  fun(item, data, dispatch);
-	  dispatch((0, _reduxRouter.pushState)(null, projectsCrud.paths.list));
-	};
-	var onRemove = function onRemove(dispatch, items) {
-	  _pouchdbReduxHelper.containers.createOnRemoveHandler(projectsCrud)(dispatch, items);
-	  dispatch((0, _reduxRouter.pushState)(null, projectsCrud.paths.list));
-	};
-	var onCreate = function onCreate(item, data, dispatch) {
-	  onSubmit(item, data, dispatch);
-	  //force reloading
-	  dispatch(projectsCrud.actions.allDocs('all'));
-	};
+	var db = window.db = (0, _pouchdb2['default'])('example3');
 
-	// connected component
-	var AllProjectListContainer = _pouchdbReduxHelper.containers.connectList(projectsCrud, { folder: 'all' })(_components.ProjectList);
+	var monstersCRUD = (0, _pouchdbReduxHelper.createCRUD)(db, 'monsters', null, {
+	  startkey: null,
+	  endkey: null
+	});
+	var reducers = _defineProperty({}, monstersCRUD.mountPoint, monstersCRUD.reducer);
 
-	exports.AllProjectListContainer = AllProjectListContainer;
-	var ProjectNewContainer = (0, _reduxForm.reduxForm)(_components.projectFormOptions, function (state) {
-	  return {
-	    onSubmit: redirectToList.bind(null, onCreate, null)
-	  };
-	})(_components.ProjectForm);
+	var columns = ['_id', 'name', 'attack', 'catch_rate', 'defense', 'growth_rate', 'happiness', 'height', 'hp', 'male_female_ratio', 'national_id', 'species', 'sp_atk', 'sp_def', 'speed', 'weight'];
 
-	exports.ProjectNewContainer = ProjectNewContainer;
-	var ProjectDetailContainer = (0, _reactRedux.connect)(function (state) {
-	  return {
-	    docId: state.router.params.id,
-	    onRemove: onRemove
-	  };
-	})(_pouchdbReduxHelper.containers.connectSingleItem(projectsCrud)(_components.ProjectDetail));
+	var PaginatedComponent = function PaginatedComponent(props) {
+	  var prev = props.folderVars.get('prev');
+	  var next = props.folderVars.get('next');
 
-	exports.ProjectDetailContainer = ProjectDetailContainer;
-	var editMapStateToProps = function editMapStateToProps(state) {
-	  var item = _pouchdbReduxHelper.utils.getObjectFromState(state, projectsCrud.mountPoint, state.router.params.id).toJS();
-	  return {
-	    onSubmit: redirectToList.bind(null, onSubmit, item),
-	    initialValues: item
-	  };
+	  return _react2['default'].createElement(
+	    'div',
+	    null,
+	    _react2['default'].createElement(_components.ProjectTable, { items: props.items, columns: columns }),
+	    _react2['default'].createElement(_components.Navigation, { next: next, prev: prev })
+	  );
 	};
 
-	var ProjectEditContainer = (0, _reactRedux.connect)(function (state) {
-	  return { docId: state.router.params.id };
-	})(_pouchdbReduxHelper.containers.connectSingleItem(projectsCrud)((0, _reduxForm.reduxForm)(_components.projectFormOptions, editMapStateToProps)(_components.ProjectForm)));
+	//map url params to props
 
-	exports.ProjectEditContainer = ProjectEditContainer;
+	var Container = (function (_Component) {
+	  _inherits(Container, _Component);
+
+	  function Container() {
+	    _classCallCheck(this, _Container);
+
+	    _get(Object.getPrototypeOf(_Container.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(Container, [{
+	    key: 'render',
+	    value: function render() {
+	      var startkey = this.props.startkey;
+
+	      var C = (0, _pouchdbReduxHelper.paginate)({
+	        rowsPerPage: 25,
+	        startkey: startkey
+	      }, monstersCRUD)(PaginatedComponent);
+	      return _react2['default'].createElement(C);
+	    }
+	  }]);
+
+	  var _Container = Container;
+	  Container = (0, _reactRedux.connect)(function (state) {
+	    return {
+	      startkey: state.router.location.query.start
+	    };
+	  })(Container) || Container;
+	  return Container;
+	})(_react.Component);
+
 	var routes = _react2['default'].createElement(
 	  _reactRouter.Route,
 	  { path: '/', component: _components.App },
-	  _react2['default'].createElement(_reactRouter.IndexRoute, { component: AllProjectListContainer }),
-	  _react2['default'].createElement(_reactRouter.Route, { path: projectsCrud.paths.list, component: AllProjectListContainer }),
-	  _react2['default'].createElement(_reactRouter.Route, { path: projectsCrud.paths.create, component: ProjectNewContainer }),
-	  _react2['default'].createElement(_reactRouter.Route, { path: projectsCrud.paths.edit, component: ProjectEditContainer }),
-	  _react2['default'].createElement(_reactRouter.Route, { path: projectsCrud.paths.detail, component: ProjectDetailContainer })
+	  _react2['default'].createElement(_reactRouter.IndexRoute, { component: Container })
 	);
 
-	(0, _exampleApp2['default'])(reducers, routes);
+	// load data from file
+	db.get('_local/initial_load_complete')['catch'](function (err) {
+	  if (err.status !== 404) {
+	    throw err;
+	  }
+	  document.getElementById('root').innerHTML = 'populating database';
+	  return db.load('data/monsters.txt').then(function () {
+	    return db.put({ _id: '_local/initial_load_complete' });
+	  });
+	}).then(function () {
+	  (0, _exampleApp2['default'])(reducers, routes);
+	});
 
 /***/ },
 /* 1 */
@@ -54574,6 +54591,1871 @@
 	})(_react.Component);
 
 	exports['default'] = DebugPanel;
+
+/***/ },
+/* 462 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var utils = __webpack_require__(463);
+	var ajax = __webpack_require__(470);
+	var Checkpointer = __webpack_require__(472);
+	var genReplicationId = __webpack_require__(474);
+
+	function parseDump(data) {
+	  var docs = [];
+	  var lastSeq = 0;
+	  try {
+	    data.split('\n').forEach(function (line) {
+	      if (!line) {
+	        return;
+	      }
+	      line = JSON.parse(line);
+	      if (line.docs) {
+	        docs = docs.concat(line.docs);
+	      }
+	      if (line.seq) {
+	        lastSeq = line.seq;
+	      }
+	    });
+	  } catch (err) {
+	    return {err: err};
+	  }
+	  return {docs: docs, lastSeq: lastSeq};
+	}
+
+	function loadString(db, data, opts, callback) {
+
+	  var parsedDump = parseDump(data);
+	  if (parsedDump.err) {
+	    return callback(parsedDump.err);
+	  }
+	  var docs = parsedDump.docs;
+	  var lastSeq = parsedDump.lastSeq;
+
+	  var called = false;
+	  function done(res) {
+	    if (!called) {
+	      callback(res);
+	    }
+	    called = true;
+	  }
+
+	  db.bulkDocs({docs: docs, new_edits: false}).then(function () {
+	    if (!opts.proxy) {
+	      return done();
+	    }
+
+	    return db.info();
+	  }).then(function (info) {
+	    var src = new db.constructor(opts.proxy,
+	      utils.extend(true, {}, {}, opts));
+	    var target = new db.constructor(info.db_name,
+	      utils.extend(true, {}, db.__opts, opts));
+	    var replIdOpts = {};
+	    if (opts.filter) {
+	      replIdOpts.filter = opts.filter;
+	    }
+	    if (opts.query_params) {
+	      replIdOpts.query_params = opts.query_params;
+	    }
+
+	    return genReplicationId(src, target, replIdOpts).then(function (replId) {
+	      var state = {
+	        cancelled: false
+	      };
+	      var checkpointer = new Checkpointer(src, target, replId, state);
+	      return checkpointer.writeCheckpoint(lastSeq);
+	    });
+	  }).then(function () {
+	    done();
+	  }, done);
+	}
+
+	function loadUrl(db, url, opts, callback) {
+
+	  var ajaxOptions = { url: url, json: false };
+	  if (opts.ajax) {
+	    ajaxOptions = utils.extend(true, ajaxOptions, opts.ajax);
+	  }
+
+	  ajax(ajaxOptions, function (err, data) {
+	    if (err) {
+	      return callback(err);
+	    }
+	    loadString(db, data, opts, callback);
+	  });
+	}
+
+	exports.load = utils.toPromise(function (url, opts, callback) {
+	  var db = this;
+
+	  if (typeof opts === 'function') {
+	    callback = opts;
+	    opts = {};
+	  }
+
+	  if (/^\s*\{/.test(url)) {
+	    // if it looks like a dump rather than a URL, interpret
+	    // it as a dumped string
+	    return loadString(db, url, opts, callback);
+	  }
+	  return loadUrl(db, url, opts, callback);
+	});
+
+	/* istanbul ignore next */
+	if (typeof window !== 'undefined' && window.PouchDB) {
+	  window.PouchDB.plugin(exports);
+	}
+
+
+/***/ },
+/* 463 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process, global) {'use strict';
+
+	var Promise = __webpack_require__(464);
+	exports.uuid = __webpack_require__(466);
+
+	exports.extend = __webpack_require__(467);
+
+	/* istanbul ignore next */
+	exports.once = function (fun) {
+	  var called = false;
+	  return exports.getArguments(function (args) {
+	    if (called) {
+	      console.trace();
+	      throw new Error('once called  more than once');
+	    } else {
+	      called = true;
+	      fun.apply(this, args);
+	    }
+	  });
+	};
+	exports.getArguments = __webpack_require__(468);
+
+	/* istanbul ignore next */
+	exports.toPromise = function (func) {
+	  //create the function we will be returning
+	  return exports.getArguments(function (args) {
+	    var self = this;
+	    var tempCB = (typeof args[args.length - 1] === 'function') ? args.pop() : false;
+	    // if the last argument is a function, assume its a callback
+	    var usedCB;
+	    if (tempCB) {
+	      // if it was a callback, create a new callback which calls it,
+	      // but do so async so we don't trap any errors
+	      usedCB = function (err, resp) {
+	        process.nextTick(function () {
+	          tempCB(err, resp);
+	        });
+	      };
+	    }
+	    var promise = new Promise(function (fulfill, reject) {
+	      try {
+	        var callback = exports.once(function (err, mesg) {
+	          if (err) {
+	            reject(err);
+	          } else {
+	            fulfill(mesg);
+	          }
+	        });
+	        // create a callback for this invocation
+	        // apply the function in the orig context
+	        args.push(callback);
+	        func.apply(self, args);
+	      } catch (e) {
+	        reject(e);
+	      }
+	    });
+	    // if there is a callback, call it back
+	    if (usedCB) {
+	      promise.then(function (result) {
+	        usedCB(null, result);
+	      }, usedCB);
+	    }
+	    promise.cancel = function () {
+	      return this;
+	    };
+	    return promise;
+	  });
+	};
+
+	exports.inherits = __webpack_require__(469);
+	exports.Promise = Promise;
+
+	// designed to give info to browser users, who are disturbed
+	// when they see 404s in the console
+	/* istanbul ignore next */
+	exports.explain404 = function (str) {
+	  if (process.browser && 'console' in global && 'info' in console) {
+	    console.info('The above 404 is totally normal. ' +
+	    str + '\n\u2665 the PouchDB team');
+	  }
+	};
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), (function() { return this; }())))
+
+/***/ },
+/* 464 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	// allow external plugins to require('pouchdb/extras/promise')
+	module.exports = __webpack_require__(465);
+
+/***/ },
+/* 465 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+	var lie = _interopDefault(__webpack_require__(8));
+
+	/* istanbul ignore next */
+	var PouchPromise = typeof Promise === 'function' ? Promise : lie;
+
+	module.exports = PouchPromise;
+
+/***/ },
+/* 466 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	// BEGIN Math.uuid.js
+
+	/*!
+	Math.uuid.js (v1.4)
+	http://www.broofa.com
+	mailto:robert@broofa.com
+
+	Copyright (c) 2010 Robert Kieffer
+	Dual licensed under the MIT and GPL licenses.
+	*/
+
+	/*
+	 * Generate a random uuid.
+	 *
+	 * USAGE: Math.uuid(length, radix)
+	 *   length - the desired number of characters
+	 *   radix  - the number of allowable values for each character.
+	 *
+	 * EXAMPLES:
+	 *   // No arguments  - returns RFC4122, version 4 ID
+	 *   >>> Math.uuid()
+	 *   "92329D39-6F5C-4520-ABFC-AAB64544E172"
+	 *
+	 *   // One argument - returns ID of the specified length
+	 *   >>> Math.uuid(15)     // 15 character ID (default base=62)
+	 *   "VcydxgltxrVZSTV"
+	 *
+	 *   // Two arguments - returns ID of the specified length, and radix. 
+	 *   // (Radix must be <= 62)
+	 *   >>> Math.uuid(8, 2)  // 8 character ID (base=2)
+	 *   "01001010"
+	 *   >>> Math.uuid(8, 10) // 8 character ID (base=10)
+	 *   "47473046"
+	 *   >>> Math.uuid(8, 16) // 8 character ID (base=16)
+	 *   "098F4D35"
+	 */
+	/* istanbul ignore next */
+	var chars = (
+	  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
+	  'abcdefghijklmnopqrstuvwxyz'
+	).split('');
+	/* istanbul ignore next */
+	function getValue(radix) {
+	  return 0 | Math.random() * radix;
+	}
+	/* istanbul ignore next */
+	function uuid(len, radix) {
+	  radix = radix || chars.length;
+	  var out = '';
+	  var i = -1;
+
+	  if (len) {
+	    // Compact form
+	    while (++i < len) {
+	      out += chars[getValue(radix)];
+	    }
+	    return out;
+	  }
+	    // rfc4122, version 4 form
+	    // Fill in random data.  At i==19 set the high bits of clock sequence as
+	    // per rfc4122, sec. 4.1.5
+	  while (++i < 36) {
+	    switch (i) {
+	      case 8:
+	      case 13:
+	      case 18:
+	      case 23:
+	        out += '-';
+	        break;
+	      case 19:
+	        out += chars[(getValue(16) & 0x3) | 0x8];
+	        break;
+	      default:
+	        out += chars[getValue(16)];
+	    }
+	  }
+
+	  return out;
+	}
+
+
+	/* istanbul ignore next */
+	module.exports = uuid;
+
+
+
+/***/ },
+/* 467 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	// Extends method
+	// (taken from http://code.jquery.com/jquery-1.9.0.js)
+	// Populate the class2type map
+	var class2type = {};
+
+	var types = [
+	  "Boolean", "Number", "String", "Function", "Array",
+	  "Date", "RegExp", "Object", "Error"
+	];
+	for (var i = 0; i < types.length; i++) {
+	  var typename = types[i];
+	  class2type["[object " + typename + "]"] = typename.toLowerCase();
+	}
+
+	var core_toString = class2type.toString;
+	var core_hasOwn = class2type.hasOwnProperty;
+
+	function type(obj) {
+	  if (obj === null) {
+	    return String(obj);
+	  }
+	  return typeof obj === "object" || typeof obj === "function" ?
+	    class2type[core_toString.call(obj)] || "object" :
+	    typeof obj;
+	}
+
+	function isWindow(obj) {
+	  return obj !== null && obj === obj.window;
+	}
+
+	function isPlainObject(obj) {
+	  // Must be an Object.
+	  // Because of IE, we also have to check the presence of
+	  // the constructor property.
+	  // Make sure that DOM nodes and window objects don't pass through, as well
+	  if (!obj || type(obj) !== "object" || obj.nodeType || isWindow(obj)) {
+	    return false;
+	  }
+
+	  try {
+	    // Not own constructor property must be Object
+	    if (obj.constructor &&
+	      !core_hasOwn.call(obj, "constructor") &&
+	      !core_hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+	      return false;
+	    }
+	  } catch ( e ) {
+	    // IE8,9 Will throw exceptions on certain host objects #9897
+	    return false;
+	  }
+
+	  // Own properties are enumerated firstly, so to speed up,
+	  // if last one is own, then all properties are own.
+	  var key;
+	  for (key in obj) {}
+
+	  return key === undefined || core_hasOwn.call(obj, key);
+	}
+
+
+	function isFunction(obj) {
+	  return type(obj) === "function";
+	}
+
+	var isArray = Array.isArray || function (obj) {
+	  return type(obj) === "array";
+	};
+
+	function extend() {
+	  // originally extend() was recursive, but this ended up giving us
+	  // "call stack exceeded", so it's been unrolled to use a literal stack
+	  // (see https://github.com/pouchdb/pouchdb/issues/2543)
+	  var stack = [];
+	  var i = -1;
+	  var len = arguments.length;
+	  var args = new Array(len);
+	  while (++i < len) {
+	    args[i] = arguments[i];
+	  }
+	  var container = {};
+	  stack.push({args: args, result: {container: container, key: 'key'}});
+	  var next;
+	  while ((next = stack.pop())) {
+	    extendInner(stack, next.args, next.result);
+	  }
+	  return container.key;
+	}
+
+	function extendInner(stack, args, result) {
+	  var options, name, src, copy, copyIsArray, clone,
+	    target = args[0] || {},
+	    i = 1,
+	    length = args.length,
+	    deep = false,
+	    numericStringRegex = /\d+/,
+	    optionsIsArray;
+
+	  // Handle a deep copy situation
+	  if (typeof target === "boolean") {
+	    deep = target;
+	    target = args[1] || {};
+	    // skip the boolean and the target
+	    i = 2;
+	  }
+
+	  // Handle case when target is a string or something (possible in deep copy)
+	  if (typeof target !== "object" && !isFunction(target)) {
+	    target = {};
+	  }
+
+	  // extend jQuery itself if only one argument is passed
+	  if (length === i) {
+	    /* jshint validthis: true */
+	    target = this;
+	    --i;
+	  }
+
+	  for (; i < length; i++) {
+	    // Only deal with non-null/undefined values
+	    if ((options = args[i]) != null) {
+	      optionsIsArray = isArray(options);
+	      // Extend the base object
+	      for (name in options) {
+	        //if (options.hasOwnProperty(name)) {
+	        if (!(name in Object.prototype)) {
+	          if (optionsIsArray && !numericStringRegex.test(name)) {
+	            continue;
+	          }
+
+	          src = target[name];
+	          copy = options[name];
+
+	          // Prevent never-ending loop
+	          if (target === copy) {
+	            continue;
+	          }
+
+	          // Recurse if we're merging plain objects or arrays
+	          if (deep && copy && (isPlainObject(copy) ||
+	              (copyIsArray = isArray(copy)))) {
+	            if (copyIsArray) {
+	              copyIsArray = false;
+	              clone = src && isArray(src) ? src : [];
+
+	            } else {
+	              clone = src && isPlainObject(src) ? src : {};
+	            }
+
+	            // Never move original objects, clone them
+	            stack.push({
+	              args: [deep, clone, copy],
+	              result: {
+	                container: target,
+	                key: name
+	              }
+	            });
+
+	          // Don't bring in undefined values
+	          } else if (copy !== undefined) {
+	            if (!(isArray(options) && isFunction(copy))) {
+	              target[name] = copy;
+	            }
+	          }
+	        }
+	      }
+	    }
+	  }
+
+	  // "Return" the modified object by setting the key
+	  // on the given container
+	  result.container[result.key] = target;
+	}
+
+
+	module.exports = extend;
+
+
+
+
+/***/ },
+/* 468 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	module.exports = argsArray;
+
+	function argsArray(fun) {
+	  return function () {
+	    var len = arguments.length;
+	    if (len) {
+	      var args = [];
+	      var i = -1;
+	      while (++i < len) {
+	        args[i] = arguments[i];
+	      }
+	      return fun.call(this, args);
+	    } else {
+	      return fun.call(this, []);
+	    }
+	  };
+	}
+
+/***/ },
+/* 469 */
+/***/ function(module, exports) {
+
+	if (typeof Object.create === 'function') {
+	  // implementation from standard node.js 'util' module
+	  module.exports = function inherits(ctor, superCtor) {
+	    ctor.super_ = superCtor
+	    ctor.prototype = Object.create(superCtor.prototype, {
+	      constructor: {
+	        value: ctor,
+	        enumerable: false,
+	        writable: true,
+	        configurable: true
+	      }
+	    });
+	  };
+	} else {
+	  // old school shim for old browsers
+	  module.exports = function inherits(ctor, superCtor) {
+	    ctor.super_ = superCtor
+	    var TempCtor = function () {}
+	    TempCtor.prototype = superCtor.prototype
+	    ctor.prototype = new TempCtor()
+	    ctor.prototype.constructor = ctor
+	  }
+	}
+
+
+/***/ },
+/* 470 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	// allow external plugins to require('pouchdb/extras/ajax')
+	module.exports = __webpack_require__(471);
+
+/***/ },
+/* 471 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+	var lie = _interopDefault(__webpack_require__(8));
+	var jsExtend = __webpack_require__(3);
+	var inherits = _interopDefault(__webpack_require__(7));
+
+	// Abstracts constructing a Blob object, so it also works in older
+	// browsers that don't support the native Blob constructor (e.g.
+	// old QtWebKit versions, Android < 4.4).
+	function createBlob(parts, properties) {
+	  /* global BlobBuilder,MSBlobBuilder,MozBlobBuilder,WebKitBlobBuilder */
+	  parts = parts || [];
+	  properties = properties || {};
+	  try {
+	    return new Blob(parts, properties);
+	  } catch (e) {
+	    if (e.name !== "TypeError") {
+	      throw e;
+	    }
+	    var Builder = typeof BlobBuilder !== 'undefined' ? BlobBuilder :
+	                  typeof MSBlobBuilder !== 'undefined' ? MSBlobBuilder :
+	                  typeof MozBlobBuilder !== 'undefined' ? MozBlobBuilder :
+	                  WebKitBlobBuilder;
+	    var builder = new Builder();
+	    for (var i = 0; i < parts.length; i += 1) {
+	      builder.append(parts[i]);
+	    }
+	    return builder.getBlob(properties.type);
+	  }
+	}
+
+	// simplified API. universal browser support is assumed
+	function readAsArrayBuffer(blob, callback) {
+	  if (typeof FileReader === 'undefined') {
+	    // fix for Firefox in a web worker:
+	    // https://bugzilla.mozilla.org/show_bug.cgi?id=901097
+	    return callback(new FileReaderSync().readAsArrayBuffer(blob));
+	  }
+
+	  var reader = new FileReader();
+	  reader.onloadend = function (e) {
+	    var result = e.target.result || new ArrayBuffer(0);
+	    callback(result);
+	  };
+	  reader.readAsArrayBuffer(blob);
+	}
+
+	/* istanbul ignore next */
+	var PouchPromise = typeof Promise === 'function' ? Promise : lie;
+
+	function wrappedFetch() {
+	  var wrappedPromise = {};
+
+	  var promise = new PouchPromise(function(resolve, reject) {
+	    wrappedPromise.resolve = resolve;
+	    wrappedPromise.reject = reject;
+	  });
+
+	  var args = new Array(arguments.length);
+
+	  for (var i = 0; i < args.length; i++) {
+	    args[i] = arguments[i];
+	  }
+
+	  wrappedPromise.promise = promise;
+
+	  PouchPromise.resolve().then(function () {
+	    return fetch.apply(null, args);
+	  }).then(function(response) {
+	    wrappedPromise.resolve(response);
+	  }).catch(function(error) {
+	    wrappedPromise.reject(error);
+	  });
+
+	  return wrappedPromise;
+	}
+
+	function fetchRequest(options, callback) {
+	  var wrappedPromise, timer, response;
+
+	  var headers = new Headers();
+
+	  var fetchOptions = {
+	    method: options.method,
+	    credentials: 'include',
+	    headers: headers
+	  };
+
+	  if (options.json) {
+	    headers.set('Accept', 'application/json');
+	    headers.set('Content-Type', options.headers['Content-Type'] ||
+	      'application/json');
+	  }
+
+	  if (options.body && (options.body instanceof Blob)) {
+	    readAsArrayBuffer(options.body, function (arrayBuffer) {
+	      fetchOptions.body = arrayBuffer;
+	    });
+	  } else if (options.body &&
+	             options.processData &&
+	             typeof options.body !== 'string') {
+	    fetchOptions.body = JSON.stringify(options.body);
+	  } else if ('body' in options) {
+	    fetchOptions.body = options.body;
+	  } else {
+	    fetchOptions.body = null;
+	  }
+
+	  Object.keys(options.headers).forEach(function(key) {
+	    if (options.headers.hasOwnProperty(key)) {
+	      headers.set(key, options.headers[key]);
+	    }
+	  });
+
+	  wrappedPromise = wrappedFetch(options.url, fetchOptions);
+
+	  if (options.timeout > 0) {
+	    timer = setTimeout(function() {
+	      wrappedPromise.reject(new Error('Load timeout for resource: ' +
+	        options.url));
+	    }, options.timeout);
+	  }
+
+	  wrappedPromise.promise.then(function(fetchResponse) {
+	    response = {
+	      statusCode: fetchResponse.status
+	    };
+
+	    if (options.timeout > 0) {
+	      clearTimeout(timer);
+	    }
+
+	    if (response.statusCode >= 200 && response.statusCode < 300) {
+	      return options.binary ? fetchResponse.blob() : fetchResponse.text();
+	    }
+
+	    return fetchResponse.json();
+	  }).then(function(result) {
+	    if (response.statusCode >= 200 && response.statusCode < 300) {
+	      callback(null, response, result);
+	    } else {
+	      callback(result, response);
+	    }
+	  }).catch(function(error) {
+	    callback(error, response);
+	  });
+
+	  return {abort: wrappedPromise.reject};
+	}
+
+	function xhRequest(options, callback) {
+
+	  var xhr, timer;
+
+	  var abortReq = function () {
+	    xhr.abort();
+	  };
+
+	  if (options.xhr) {
+	    xhr = new options.xhr();
+	  } else {
+	    xhr = new XMLHttpRequest();
+	  }
+
+	  try {
+	    xhr.open(options.method, options.url);
+	  } catch (exception) {
+	   /* error code hardcoded to throw INVALID_URL */
+	    callback(exception, {statusCode: 413});
+	  }
+
+	  xhr.withCredentials = ('withCredentials' in options) ?
+	    options.withCredentials : true;
+
+	  if (options.method === 'GET') {
+	    delete options.headers['Content-Type'];
+	  } else if (options.json) {
+	    options.headers.Accept = 'application/json';
+	    options.headers['Content-Type'] = options.headers['Content-Type'] ||
+	      'application/json';
+	    if (options.body &&
+	        options.processData &&
+	        typeof options.body !== "string") {
+	      options.body = JSON.stringify(options.body);
+	    }
+	  }
+
+	  if (options.binary) {
+	    xhr.responseType = 'arraybuffer';
+	  }
+
+	  if (!('body' in options)) {
+	    options.body = null;
+	  }
+
+	  for (var key in options.headers) {
+	    if (options.headers.hasOwnProperty(key)) {
+	      xhr.setRequestHeader(key, options.headers[key]);
+	    }
+	  }
+
+	  if (options.timeout > 0) {
+	    timer = setTimeout(abortReq, options.timeout);
+	    xhr.onprogress = function () {
+	      clearTimeout(timer);
+	      timer = setTimeout(abortReq, options.timeout);
+	    };
+	    if (typeof xhr.upload !== 'undefined') { // does not exist in ie9
+	      xhr.upload.onprogress = xhr.onprogress;
+	    }
+	  }
+
+	  xhr.onreadystatechange = function () {
+	    if (xhr.readyState !== 4) {
+	      return;
+	    }
+
+	    var response = {
+	      statusCode: xhr.status
+	    };
+
+	    if (xhr.status >= 200 && xhr.status < 300) {
+	      var data;
+	      if (options.binary) {
+	        data = createBlob([xhr.response || ''], {
+	          type: xhr.getResponseHeader('Content-Type')
+	        });
+	      } else {
+	        data = xhr.responseText;
+	      }
+	      callback(null, response, data);
+	    } else {
+	      var err = {};
+	      try {
+	        err = JSON.parse(xhr.response);
+	      } catch(e) {}
+	      callback(err, response);
+	    }
+	  };
+
+	  if (options.body && (options.body instanceof Blob)) {
+	    readAsArrayBuffer(options.body, function (arrayBuffer) {
+	      xhr.send(arrayBuffer);
+	    });
+	  } else {
+	    xhr.send(options.body);
+	  }
+
+	  return {abort: abortReq};
+	}
+
+	function testXhr() {
+	  try {
+	    new XMLHttpRequest();
+	    return true;
+	  } catch (err) {
+	    return false;
+	  }
+	}
+
+	var hasXhr = testXhr();
+
+	function ajax$1(options, callback) {
+	  if (hasXhr || options.xhr) {
+	    return xhRequest(options, callback);
+	  } else {
+	    return fetchRequest(options, callback);
+	  }
+	}
+
+	inherits(PouchError, Error);
+
+	function PouchError(opts) {
+	  Error.call(this, opts.reason);
+	  this.status = opts.status;
+	  this.name = opts.error;
+	  this.message = opts.reason;
+	  this.error = true;
+	}
+
+	PouchError.prototype.toString = function () {
+	  return JSON.stringify({
+	    status: this.status,
+	    name: this.name,
+	    message: this.message,
+	    reason: this.reason
+	  });
+	};
+
+	var UNAUTHORIZED = new PouchError({
+	  status: 401,
+	  error: 'unauthorized',
+	  reason: "Name or password is incorrect."
+	});
+
+	var MISSING_BULK_DOCS = new PouchError({
+	  status: 400,
+	  error: 'bad_request',
+	  reason: "Missing JSON list of 'docs'"
+	});
+
+	var MISSING_DOC = new PouchError({
+	  status: 404,
+	  error: 'not_found',
+	  reason: 'missing'
+	});
+
+	var REV_CONFLICT = new PouchError({
+	  status: 409,
+	  error: 'conflict',
+	  reason: 'Document update conflict'
+	});
+
+	var INVALID_ID = new PouchError({
+	  status: 400,
+	  error: 'invalid_id',
+	  reason: '_id field must contain a string'
+	});
+
+	var MISSING_ID = new PouchError({
+	  status: 412,
+	  error: 'missing_id',
+	  reason: '_id is required for puts'
+	});
+
+	var RESERVED_ID = new PouchError({
+	  status: 400,
+	  error: 'bad_request',
+	  reason: 'Only reserved document ids may start with underscore.'
+	});
+
+	var NOT_OPEN = new PouchError({
+	  status: 412,
+	  error: 'precondition_failed',
+	  reason: 'Database not open'
+	});
+
+	var UNKNOWN_ERROR = new PouchError({
+	  status: 500,
+	  error: 'unknown_error',
+	  reason: 'Database encountered an unknown error'
+	});
+
+	var BAD_ARG = new PouchError({
+	  status: 500,
+	  error: 'badarg',
+	  reason: 'Some query argument is invalid'
+	});
+
+	var INVALID_REQUEST = new PouchError({
+	  status: 400,
+	  error: 'invalid_request',
+	  reason: 'Request was invalid'
+	});
+
+	var QUERY_PARSE_ERROR = new PouchError({
+	  status: 400,
+	  error: 'query_parse_error',
+	  reason: 'Some query parameter is invalid'
+	});
+
+	var DOC_VALIDATION = new PouchError({
+	  status: 500,
+	  error: 'doc_validation',
+	  reason: 'Bad special document member'
+	});
+
+	var BAD_REQUEST = new PouchError({
+	  status: 400,
+	  error: 'bad_request',
+	  reason: 'Something wrong with the request'
+	});
+
+	var NOT_AN_OBJECT = new PouchError({
+	  status: 400,
+	  error: 'bad_request',
+	  reason: 'Document must be a JSON object'
+	});
+
+	var DB_MISSING = new PouchError({
+	  status: 404,
+	  error: 'not_found',
+	  reason: 'Database not found'
+	});
+
+	var IDB_ERROR = new PouchError({
+	  status: 500,
+	  error: 'indexed_db_went_bad',
+	  reason: 'unknown'
+	});
+
+	var WSQ_ERROR = new PouchError({
+	  status: 500,
+	  error: 'web_sql_went_bad',
+	  reason: 'unknown'
+	});
+
+	var LDB_ERROR = new PouchError({
+	  status: 500,
+	  error: 'levelDB_went_went_bad',
+	  reason: 'unknown'
+	});
+
+	var FORBIDDEN = new PouchError({
+	  status: 403,
+	  error: 'forbidden',
+	  reason: 'Forbidden by design doc validate_doc_update function'
+	});
+
+	var INVALID_REV = new PouchError({
+	  status: 400,
+	  error: 'bad_request',
+	  reason: 'Invalid rev format'
+	});
+
+	var FILE_EXISTS = new PouchError({
+	  status: 412,
+	  error: 'file_exists',
+	  reason: 'The database could not be created, the file already exists.'
+	});
+
+	var MISSING_STUB = new PouchError({
+	  status: 412,
+	  error: 'missing_stub'
+	});
+
+	var INVALID_URL = new PouchError({
+	  status: 413,
+	  error: 'invalid_url',
+	  reason: 'Provided URL is invalid'
+	});
+
+	var allErrors = {
+	  UNAUTHORIZED: UNAUTHORIZED,
+	  MISSING_BULK_DOCS: MISSING_BULK_DOCS,
+	  MISSING_DOC: MISSING_DOC,
+	  REV_CONFLICT: REV_CONFLICT,
+	  INVALID_ID: INVALID_ID,
+	  MISSING_ID: MISSING_ID,
+	  RESERVED_ID: RESERVED_ID,
+	  NOT_OPEN: NOT_OPEN,
+	  UNKNOWN_ERROR: UNKNOWN_ERROR,
+	  BAD_ARG: BAD_ARG,
+	  INVALID_REQUEST: INVALID_REQUEST,
+	  QUERY_PARSE_ERROR: QUERY_PARSE_ERROR,
+	  DOC_VALIDATION: DOC_VALIDATION,
+	  BAD_REQUEST: BAD_REQUEST,
+	  NOT_AN_OBJECT: NOT_AN_OBJECT,
+	  DB_MISSING: DB_MISSING,
+	  WSQ_ERROR: WSQ_ERROR,
+	  LDB_ERROR: LDB_ERROR,
+	  FORBIDDEN: FORBIDDEN,
+	  INVALID_REV: INVALID_REV,
+	  FILE_EXISTS: FILE_EXISTS,
+	  MISSING_STUB: MISSING_STUB,
+	  IDB_ERROR: IDB_ERROR,
+	  INVALID_URL: INVALID_URL
+	};
+
+	function createError(error, reason, name) {
+	  function CustomPouchError(reason) {
+	    // inherit error properties from our parent error manually
+	    // so as to allow proper JSON parsing.
+	    /* jshint ignore:start */
+	    for (var p in error) {
+	      if (typeof error[p] !== 'function') {
+	        this[p] = error[p];
+	      }
+	    }
+	    /* jshint ignore:end */
+	    if (name !== undefined) {
+	      this.name = name;
+	    }
+	    if (reason !== undefined) {
+	      this.reason = reason;
+	    }
+	  }
+	  CustomPouchError.prototype = PouchError.prototype;
+	  return new CustomPouchError(reason);
+	}
+
+	// Find one of the errors defined above based on the value
+	// of the specified property.
+	// If reason is provided prefer the error matching that reason.
+	// This is for differentiating between errors with the same name and status,
+	// eg, bad_request.
+	var getErrorTypeByProp = function (prop, value, reason) {
+	  var keys = Object.keys(allErrors).filter(function (key) {
+	    var error = allErrors[key];
+	    return typeof error !== 'function' && error[prop] === value;
+	  });
+	  var key = reason && keys.filter(function (key) {
+	        var error = allErrors[key];
+	        return error.message === reason;
+	      })[0] || keys[0];
+	  return (key) ? allErrors[key] : null;
+	};
+
+	function generateErrorFromResponse(res) {
+	  var error, errName, errType, errMsg, errReason;
+
+	  errName = (res.error === true && typeof res.name === 'string') ?
+	              res.name :
+	              res.error;
+	  errReason = res.reason;
+	  errType = getErrorTypeByProp('name', errName, errReason);
+
+	  if (res.missing ||
+	      errReason === 'missing' ||
+	      errReason === 'deleted' ||
+	      errName === 'not_found') {
+	    errType = MISSING_DOC;
+	  } else if (errName === 'doc_validation') {
+	    // doc validation needs special treatment since
+	    // res.reason depends on the validation error.
+	    // see utils.js
+	    errType = DOC_VALIDATION;
+	    errMsg = errReason;
+	  } else if (errName === 'bad_request' && errType.message !== errReason) {
+	    // if bad_request error already found based on reason don't override.
+	    errType = BAD_REQUEST;
+	  }
+
+	  // fallback to error by status or unknown error.
+	  if (!errType) {
+	    errType = getErrorTypeByProp('status', res.status, errReason) ||
+	                UNKNOWN_ERROR;
+	  }
+
+	  error = createError(errType, errReason, errName);
+
+	  // Keep custom message.
+	  if (errMsg) {
+	    error.message = errMsg;
+	  }
+
+	  // Keep helpful response data in our error messages.
+	  if (res.id) {
+	    error.id = res.id;
+	  }
+	  if (res.status) {
+	    error.status = res.status;
+	  }
+	  if (res.missing) {
+	    error.missing = res.missing;
+	  }
+
+	  return error;
+	}
+
+	function isBinaryObject(object) {
+	  return object instanceof ArrayBuffer ||
+	    (typeof Blob !== 'undefined' && object instanceof Blob);
+	}
+
+	function cloneArrayBuffer(buff) {
+	  if (typeof buff.slice === 'function') {
+	    return buff.slice(0);
+	  }
+	  // IE10-11 slice() polyfill
+	  var target = new ArrayBuffer(buff.byteLength);
+	  var targetArray = new Uint8Array(target);
+	  var sourceArray = new Uint8Array(buff);
+	  targetArray.set(sourceArray);
+	  return target;
+	}
+
+	function cloneBinaryObject(object) {
+	  if (object instanceof ArrayBuffer) {
+	    return cloneArrayBuffer(object);
+	  }
+	  var size = object.size;
+	  var type = object.type;
+	  // Blob
+	  if (typeof object.slice === 'function') {
+	    return object.slice(0, size, type);
+	  }
+	  // PhantomJS slice() replacement
+	  return object.webkitSlice(0, size, type);
+	}
+
+	function clone(object) {
+	  var newObject;
+	  var i;
+	  var len;
+
+	  if (!object || typeof object !== 'object') {
+	    return object;
+	  }
+
+	  if (Array.isArray(object)) {
+	    newObject = [];
+	    for (i = 0, len = object.length; i < len; i++) {
+	      newObject[i] = clone(object[i]);
+	    }
+	    return newObject;
+	  }
+
+	  // special case: to avoid inconsistencies between IndexedDB
+	  // and other backends, we automatically stringify Dates
+	  if (object instanceof Date) {
+	    return object.toISOString();
+	  }
+
+	  if (isBinaryObject(object)) {
+	    return cloneBinaryObject(object);
+	  }
+
+	  newObject = {};
+	  for (i in object) {
+	    if (Object.prototype.hasOwnProperty.call(object, i)) {
+	      var value = clone(object[i]);
+	      if (typeof value !== 'undefined') {
+	        newObject[i] = value;
+	      }
+	    }
+	  }
+	  return newObject;
+	}
+
+	// the blob already has a type; do nothing
+	var res = function () {};
+
+	function defaultBody() {
+	  return '';
+	}
+
+	function ajaxCore(options, callback) {
+
+	  options = clone(options);
+
+	  var defaultOptions = {
+	    method : "GET",
+	    headers: {},
+	    json: true,
+	    processData: true,
+	    timeout: 10000,
+	    cache: false
+	  };
+
+	  options = jsExtend.extend(defaultOptions, options);
+
+	  function onSuccess(obj, resp, cb) {
+	    if (!options.binary && options.json && typeof obj === 'string') {
+	      try {
+	        obj = JSON.parse(obj);
+	      } catch (e) {
+	        // Probably a malformed JSON from server
+	        return cb(e);
+	      }
+	    }
+	    if (Array.isArray(obj)) {
+	      obj = obj.map(function (v) {
+	        if (v.error || v.missing) {
+	          return generateErrorFromResponse(v);
+	        } else {
+	          return v;
+	        }
+	      });
+	    }
+	    if (options.binary) {
+	      res(obj, resp);
+	    }
+	    cb(null, obj, resp);
+	  }
+
+	  function onError(err, cb) {
+	    var errParsed, errObj;
+	    if (err.code && err.status) {
+	      var err2 = new Error(err.message || err.code);
+	      err2.status = err.status;
+	      return cb(err2);
+	    }
+	    // We always get code && status in node
+	    /* istanbul ignore next */
+	    try {
+	      errParsed = JSON.parse(err.responseText);
+	      //would prefer not to have a try/catch clause
+	      errObj = generateErrorFromResponse(errParsed);
+	    } catch (e) {
+	      errObj = generateErrorFromResponse(err);
+	    }
+	    /* istanbul ignore next */
+	    cb(errObj);
+	  }
+
+
+	  if (options.json) {
+	    if (!options.binary) {
+	      options.headers.Accept = 'application/json';
+	    }
+	    options.headers['Content-Type'] = options.headers['Content-Type'] ||
+	      'application/json';
+	  }
+
+	  if (options.binary) {
+	    options.encoding = null;
+	    options.json = false;
+	  }
+
+	  if (!options.processData) {
+	    options.json = false;
+	  }
+
+	  return ajax$1(options, function (err, response, body) {
+	    if (err) {
+	      err.status = response ? response.statusCode : 400;
+	      return onError(err, callback);
+	    }
+
+	    var error;
+	    var content_type = response.headers && response.headers['content-type'];
+	    var data = body || defaultBody();
+
+	    // CouchDB doesn't always return the right content-type for JSON data, so
+	    // we check for ^{ and }$ (ignoring leading/trailing whitespace)
+	    if (!options.binary && (options.json || !options.processData) &&
+	        typeof data !== 'object' &&
+	        (/json/.test(content_type) ||
+	         (/^[\s]*\{/.test(data) && /\}[\s]*$/.test(data)))) {
+	      try {
+	        data = JSON.parse(data.toString());
+	      } catch (e) {}
+	    }
+
+	    if (response.statusCode >= 200 && response.statusCode < 300) {
+	      onSuccess(data, response, callback);
+	    } else {
+	      error = generateErrorFromResponse(data);
+	      error.status = response.statusCode;
+	      callback(error);
+	    }
+	  });
+	}
+
+	function ajax(opts, callback) {
+
+	  // cache-buster, specifically designed to work around IE's aggressive caching
+	  // see http://www.dashbay.com/2011/05/internet-explorer-caches-ajax/
+	  // Also Safari caches POSTs, so we need to cache-bust those too.
+	  var ua = (navigator && navigator.userAgent) ?
+	    navigator.userAgent.toLowerCase() : '';
+
+	  var isSafari = ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1;
+	  var isIE = ua.indexOf('msie') !== -1;
+	  var isEdge = ua.indexOf('edge') !== -1;
+
+	  var shouldCacheBust = (isSafari && opts.method === 'POST') ||
+	    ((isIE || isEdge) && opts.method === 'GET');
+
+	  var cache = 'cache' in opts ? opts.cache : true;
+
+	  if (shouldCacheBust || !cache) {
+	    var hasArgs = opts.url.indexOf('?') !== -1;
+	    opts.url += (hasArgs ? '&' : '?') + '_nonce=' + Date.now();
+	  }
+
+	  return ajaxCore(opts, callback);
+	}
+
+	module.exports = ajax;
+
+/***/ },
+/* 472 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	// allow external plugins to require('pouchdb/extras/checkpointer')
+	module.exports = __webpack_require__(473);
+
+/***/ },
+/* 473 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
+
+	function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+	var lie = _interopDefault(__webpack_require__(8));
+	var pouchCollate = _interopDefault(__webpack_require__(14));
+
+	/* istanbul ignore next */
+	var PouchPromise = typeof Promise === 'function' ? Promise : lie;
+
+	// designed to give info to browser users, who are disturbed
+	// when they see http errors in the console
+	function explainError(status, str) {
+	  if ('console' in global && 'info' in console) {
+	    console.info('The above ' + status + ' is totally normal. ' + str);
+	  }
+	}
+
+	var collate = pouchCollate.collate;
+
+	var CHECKPOINT_VERSION = 1;
+	var REPLICATOR = "pouchdb";
+	// This is an arbitrary number to limit the
+	// amount of replication history we save in the checkpoint.
+	// If we save too much, the checkpoing docs will become very big,
+	// if we save fewer, we'll run a greater risk of having to
+	// read all the changes from 0 when checkpoint PUTs fail
+	// CouchDB 2.0 has a more involved history pruning,
+	// but let's go for the simple version for now.
+	var CHECKPOINT_HISTORY_SIZE = 5;
+	var LOWEST_SEQ = 0;
+
+	function updateCheckpoint(db, id, checkpoint, session, returnValue) {
+	  return db.get(id).catch(function (err) {
+	    if (err.status === 404) {
+	      if (db.type() === 'http') {
+	        explainError(
+	          404, 'PouchDB is just checking if a remote checkpoint exists.'
+	        );
+	      }
+	      return {
+	        session_id: session,
+	        _id: id,
+	        history: [],
+	        replicator: REPLICATOR,
+	        version: CHECKPOINT_VERSION
+	      };
+	    }
+	    throw err;
+	  }).then(function (doc) {
+	    if (returnValue.cancelled) {
+	      return;
+	    }
+	    // Filter out current entry for this replication
+	    doc.history = (doc.history || []).filter(function (item) {
+	      return item.session_id !== session;
+	    });
+
+	    // Add the latest checkpoint to history
+	    doc.history.unshift({
+	      last_seq: checkpoint,
+	      session_id: session
+	    });
+
+	    // Just take the last pieces in history, to
+	    // avoid really big checkpoint docs.
+	    // see comment on history size above
+	    doc.history = doc.history.slice(0, CHECKPOINT_HISTORY_SIZE);
+
+	    doc.version = CHECKPOINT_VERSION;
+	    doc.replicator = REPLICATOR;
+
+	    doc.session_id = session;
+	    doc.last_seq = checkpoint;
+
+	    return db.put(doc).catch(function (err) {
+	      if (err.status === 409) {
+	        // retry; someone is trying to write a checkpoint simultaneously
+	        return updateCheckpoint(db, id, checkpoint, session, returnValue);
+	      }
+	      throw err;
+	    });
+	  });
+	}
+
+	function Checkpointer(src, target, id, returnValue) {
+	  this.src = src;
+	  this.target = target;
+	  this.id = id;
+	  this.returnValue = returnValue;
+	}
+
+	Checkpointer.prototype.writeCheckpoint = function (checkpoint, session) {
+	  var self = this;
+	  return this.updateTarget(checkpoint, session).then(function () {
+	    return self.updateSource(checkpoint, session);
+	  });
+	};
+
+	Checkpointer.prototype.updateTarget = function (checkpoint, session) {
+	  return updateCheckpoint(this.target, this.id, checkpoint,
+	      session, this.returnValue);
+	};
+
+	Checkpointer.prototype.updateSource = function (checkpoint, session) {
+	  var self = this;
+	  if (this.readOnlySource) {
+	    return PouchPromise.resolve(true);
+	  }
+	  return updateCheckpoint(this.src, this.id, checkpoint,
+	      session, this.returnValue)
+	    .catch(function (err) {
+	      if (isForbiddenError(err)) {
+	        self.readOnlySource = true;
+	        return true;
+	      }
+	      throw err;
+	    });
+	};
+
+	var comparisons = {
+	  "undefined": function(targetDoc, sourceDoc) {
+	    // This is the previous comparison function
+	    if (collate(targetDoc.last_seq, sourceDoc.last_seq) === 0) {
+	      return sourceDoc.last_seq;
+	    }
+	    /* istanbul ignore next */
+	    return 0;
+	  },
+	  "1": function(targetDoc, sourceDoc) {
+	    // This is the comparison function ported from CouchDB
+	    return compareReplicationLogs(sourceDoc, targetDoc).last_seq;
+	  }
+	};
+
+	Checkpointer.prototype.getCheckpoint = function () {
+	  var self = this;
+	  return self.target.get(self.id).then(function (targetDoc) {
+	    if (self.readOnlySource) {
+	      return PouchPromise.resolve(targetDoc.last_seq);
+	    }
+
+	    return self.src.get(self.id).then(function (sourceDoc) {
+	      // Since we can't migrate an old version doc to a new one
+	      // (no session id), we just go with the lowest seq in this case
+	      /* istanbul ignore if */
+	      if (targetDoc.version !== sourceDoc.version) {
+	        return LOWEST_SEQ;
+	      }
+
+	      var version;
+	      if (targetDoc.version) {
+	        version = targetDoc.version.toString();
+	      } else {
+	        version = "undefined";
+	      }
+
+	      if (version in comparisons) {
+	        return comparisons[version](targetDoc, sourceDoc);
+	      }
+	      /* istanbul ignore next */
+	      return LOWEST_SEQ;
+	    }, function (err) {
+	      if (err.status === 404 && targetDoc.last_seq) {
+	        return self.src.put({
+	          _id: self.id,
+	          last_seq: LOWEST_SEQ
+	        }).then(function () {
+	          return LOWEST_SEQ;
+	        }, function (err) {
+	          if (isForbiddenError(err)) {
+	            self.readOnlySource = true;
+	            return targetDoc.last_seq;
+	          }
+	          /* istanbul ignore next */
+	          return LOWEST_SEQ;
+	        });
+	      }
+	      throw err;
+	    });
+	  }).catch(function (err) {
+	    if (err.status !== 404) {
+	      throw err;
+	    }
+	    return LOWEST_SEQ;
+	  });
+	};
+	// This checkpoint comparison is ported from CouchDBs source
+	// they come from here:
+	// https://github.com/apache/couchdb-couch-replicator/blob/master/src/couch_replicator.erl#L863-L906
+
+	function compareReplicationLogs (srcDoc, tgtDoc) {
+	  if (srcDoc.session_id === tgtDoc.session_id) {
+	    return {
+	      last_seq: srcDoc.last_seq,
+	      history: srcDoc.history || []
+	    };
+	  }
+
+	  var sourceHistory = srcDoc.history || [];
+	  var targetHistory = tgtDoc.history || [];
+	  return compareReplicationHistory(sourceHistory, targetHistory);
+	}
+
+	function compareReplicationHistory (sourceHistory, targetHistory) {
+	  // the erlang loop via function arguments is not so easy to repeat in JS
+	  // therefore, doing this as recursion
+	  var S = sourceHistory[0];
+	  var sourceRest = sourceHistory.slice(1);
+	  var T = targetHistory[0];
+	  var targetRest = targetHistory.slice(1);
+
+	  if (!S || targetHistory.length === 0) {
+	    return {
+	      last_seq: LOWEST_SEQ,
+	      history: []
+	    };
+	  }
+
+	  var sourceId = S.session_id;
+	  /* istanbul ignore if */
+	  if (hasSessionId(sourceId, targetHistory)) {
+	    return {
+	      last_seq: S.last_seq,
+	      history: sourceHistory
+	    };
+	  }
+
+	  var targetId = T.session_id;
+	  if (hasSessionId(targetId, sourceRest)) {
+	    return {
+	      last_seq: T.last_seq,
+	      history: targetRest
+	    };
+	  }
+
+	  return compareReplicationHistory(sourceRest, targetRest);
+	}
+
+	function hasSessionId (sessionId, history) {
+	  var props = history[0];
+	  var rest = history.slice(1);
+
+	  if (!sessionId || history.length === 0) {
+	    return false;
+	  }
+
+	  if (sessionId === props.session_id) {
+	    return true;
+	  }
+
+	  return hasSessionId(sessionId, rest);
+	}
+
+	function isForbiddenError (err) {
+	  return typeof err.status === 'number' && Math.floor(err.status / 100) === 4;
+	}
+
+	module.exports = Checkpointer;
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 474 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	// allow external plugins to require('pouchdb/extras/genReplicationId')
+	module.exports = __webpack_require__(475);
+
+/***/ },
+/* 475 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process, global) {'use strict';
+
+	function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+	var lie = _interopDefault(__webpack_require__(8));
+	var getArguments = _interopDefault(__webpack_require__(11));
+	var Md5 = _interopDefault(__webpack_require__(16));
+	var pouchdbCollate = __webpack_require__(14);
+
+	/* istanbul ignore next */
+	var PouchPromise = typeof Promise === 'function' ? Promise : lie;
+
+	function isBinaryObject(object) {
+	  return object instanceof ArrayBuffer ||
+	    (typeof Blob !== 'undefined' && object instanceof Blob);
+	}
+
+	function cloneArrayBuffer(buff) {
+	  if (typeof buff.slice === 'function') {
+	    return buff.slice(0);
+	  }
+	  // IE10-11 slice() polyfill
+	  var target = new ArrayBuffer(buff.byteLength);
+	  var targetArray = new Uint8Array(target);
+	  var sourceArray = new Uint8Array(buff);
+	  targetArray.set(sourceArray);
+	  return target;
+	}
+
+	function cloneBinaryObject(object) {
+	  if (object instanceof ArrayBuffer) {
+	    return cloneArrayBuffer(object);
+	  }
+	  var size = object.size;
+	  var type = object.type;
+	  // Blob
+	  if (typeof object.slice === 'function') {
+	    return object.slice(0, size, type);
+	  }
+	  // PhantomJS slice() replacement
+	  return object.webkitSlice(0, size, type);
+	}
+
+	function clone(object) {
+	  var newObject;
+	  var i;
+	  var len;
+
+	  if (!object || typeof object !== 'object') {
+	    return object;
+	  }
+
+	  if (Array.isArray(object)) {
+	    newObject = [];
+	    for (i = 0, len = object.length; i < len; i++) {
+	      newObject[i] = clone(object[i]);
+	    }
+	    return newObject;
+	  }
+
+	  // special case: to avoid inconsistencies between IndexedDB
+	  // and other backends, we automatically stringify Dates
+	  if (object instanceof Date) {
+	    return object.toISOString();
+	  }
+
+	  if (isBinaryObject(object)) {
+	    return cloneBinaryObject(object);
+	  }
+
+	  newObject = {};
+	  for (i in object) {
+	    if (Object.prototype.hasOwnProperty.call(object, i)) {
+	      var value = clone(object[i]);
+	      if (typeof value !== 'undefined') {
+	        newObject[i] = value;
+	      }
+	    }
+	  }
+	  return newObject;
+	}
+
+	function once(fun) {
+	  var called = false;
+	  return getArguments(function (args) {
+	    /* istanbul ignore if */
+	    if (called) {
+	      // this is a smoke test and should never actually happen
+	      throw new Error('once called more than once');
+	    } else {
+	      called = true;
+	      fun.apply(this, args);
+	    }
+	  });
+	}
+
+	function toPromise(func) {
+	  //create the function we will be returning
+	  return getArguments(function (args) {
+	    // Clone arguments
+	    args = clone(args);
+	    var self = this;
+	    var tempCB =
+	      (typeof args[args.length - 1] === 'function') ? args.pop() : false;
+	    // if the last argument is a function, assume its a callback
+	    var usedCB;
+	    if (tempCB) {
+	      // if it was a callback, create a new callback which calls it,
+	      // but do so async so we don't trap any errors
+	      usedCB = function (err, resp) {
+	        process.nextTick(function () {
+	          tempCB(err, resp);
+	        });
+	      };
+	    }
+	    var promise = new PouchPromise(function (fulfill, reject) {
+	      var resp;
+	      try {
+	        var callback = once(function (err, mesg) {
+	          if (err) {
+	            reject(err);
+	          } else {
+	            fulfill(mesg);
+	          }
+	        });
+	        // create a callback for this invocation
+	        // apply the function in the orig context
+	        args.push(callback);
+	        resp = func.apply(self, args);
+	        if (resp && typeof resp.then === 'function') {
+	          fulfill(resp);
+	        }
+	      } catch (e) {
+	        reject(e);
+	      }
+	    });
+	    // if there is a callback, call it back
+	    if (usedCB) {
+	      promise.then(function (result) {
+	        usedCB(null, result);
+	      }, usedCB);
+	    }
+	    return promise;
+	  });
+	}
+
+	var thisBtoa = function (str) {
+	  return btoa(str);
+	};
+
+	var setImmediateShim = global.setImmediate || global.setTimeout;
+	var MD5_CHUNK_SIZE = 32768;
+
+	function rawToBase64(raw) {
+	  return thisBtoa(raw);
+	}
+
+	function appendBuffer(buffer, data, start, end) {
+	  if (start > 0 || end < data.byteLength) {
+	    // only create a subarray if we really need to
+	    data = new Uint8Array(data, start,
+	      Math.min(end, data.byteLength) - start);
+	  }
+	  buffer.append(data);
+	}
+
+	function appendString(buffer, data, start, end) {
+	  if (start > 0 || end < data.length) {
+	    // only create a substring if we really need to
+	    data = data.substring(start, end);
+	  }
+	  buffer.appendBinary(data);
+	}
+
+	var md5 = toPromise(function (data, callback) {
+	  var inputIsString = typeof data === 'string';
+	  var len = inputIsString ? data.length : data.byteLength;
+	  var chunkSize = Math.min(MD5_CHUNK_SIZE, len);
+	  var chunks = Math.ceil(len / chunkSize);
+	  var currentChunk = 0;
+	  var buffer = inputIsString ? new Md5() : new Md5.ArrayBuffer();
+
+	  var append = inputIsString ? appendString : appendBuffer;
+
+	  function loadNextChunk() {
+	    var start = currentChunk * chunkSize;
+	    var end = start + chunkSize;
+	    currentChunk++;
+	    if (currentChunk < chunks) {
+	      append(buffer, data, start, end);
+	      setImmediateShim(loadNextChunk);
+	    } else {
+	      append(buffer, data, start, end);
+	      var raw = buffer.end(true);
+	      var base64 = rawToBase64(raw);
+	      callback(null, base64);
+	      buffer.destroy();
+	    }
+	  }
+	  loadNextChunk();
+	});
+
+	function sortObjectPropertiesByKey(queryParams) {
+	  return Object.keys(queryParams).sort(pouchdbCollate.collate).reduce(function (result, key) {
+	    result[key] = queryParams[key];
+	    return result;
+	  }, {});
+	}
+
+	// Generate a unique id particular to this replication.
+	// Not guaranteed to align perfectly with CouchDB's rep ids.
+	function generateReplicationId(src, target, opts) {
+	  var docIds = opts.doc_ids ? opts.doc_ids.sort(pouchdbCollate.collate) : '';
+	  var filterFun = opts.filter ? opts.filter.toString() : '';
+	  var queryParams = '';
+	  var filterViewName =  '';
+
+	  if (opts.filter && opts.query_params) {
+	    queryParams = JSON.stringify(sortObjectPropertiesByKey(opts.query_params));
+	  }
+
+	  if (opts.filter && opts.filter === '_view') {
+	    filterViewName = opts.view.toString();
+	  }
+
+	  return PouchPromise.all([src.id(), target.id()]).then(function (res) {
+	    var queryData = res[0] + res[1] + filterFun + filterViewName +
+	      queryParams + docIds;
+	    return md5(queryData);
+	  }).then(function (md5sum) {
+	    // can't use straight-up md5 alphabet, because
+	    // the char '/' is interpreted as being for attachments,
+	    // and + is also not url-safe
+	    md5sum = md5sum.replace(/\//g, '.').replace(/\+/g, '_');
+	    return '_local/' + md5sum;
+	  });
+	}
+
+	module.exports = generateReplicationId;
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), (function() { return this; }())))
 
 /***/ }
 /******/ ]);
