@@ -7,7 +7,7 @@
 
     <style type="text/css">
 body {
-  background: #eee;
+  background: #efefef;
 }
 .example-enter {
   opacity: 0.01;
@@ -31,7 +31,25 @@ body {
   </head>
   <body>
 
-    <h1><a href="http://bmihelac.github.io/pouchdb-redux-helper-example/">pouchdb-redux-helper example</a></h1>
+<div class="container">
+<div class="page-header">
+    <h1>pouchdb-redux-helper </h1>
+    <p>
+      <a href="http://bmihelac.github.io/pouchdb-redux-helper-example/">Examples</a>
+    </p>
+  <p>
+    <a href="https://github.com/bmihelac/pouchdb-redux-helper">github.com/bmihelac/pouchdb-redux-helper</a>
+  </p>
+</div>
+
+    {% block description %}
+      <p>
+      {{ desc }}
+      </p>
+      <p class="small">
+      {{ longdesc }}
+      </p>
+    {% endblock %}
 
     {% block body %}
       <div id='root'>
@@ -39,10 +57,7 @@ body {
     {% endblock %}
 
     {{ contents|safe }}
-
-    <p>
-      <a href="https://github.com/bmihelac/pouchdb-redux-helper-example">github.com/bmihelac/pouchdb-redux-helper-example</a>
-    </p>
+</div>
 
     {% block scripts %}
       {% if bundle %}
