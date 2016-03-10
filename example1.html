@@ -36,6 +36,8 @@ body {
     <h1>pouchdb-redux-helper </h1>
     <p>
       <a href="http://bmihelac.github.io/pouchdb-redux-helper-example/">Examples</a>
+      <br>
+      <a href="https://github.com/bmihelac/pouchdb-redux-helper-example/tree/gh-pages/src/">Examples source code</a>
     </p>
   <p>
     <a href="https://github.com/bmihelac/pouchdb-redux-helper">github.com/bmihelac/pouchdb-redux-helper</a>

@@ -85,7 +85,7 @@ db.get('_local/initial_load_complete').catch(function (err) {
     throw err;
   }
   document.getElementById('root').innerHTML = 'populating database';
-  return db.load('/data/monsters.txt').then(() => {
+  return db.load('data/monsters.txt').then(() => {
     return db.put({_id: '_local/initial_load_complete'});
   });
 }).then(function() {
