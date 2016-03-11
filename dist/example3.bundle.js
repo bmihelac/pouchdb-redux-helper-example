@@ -86,7 +86,7 @@
 
 	_pouchdb2['default'].plugin(_pouchdbLoad2['default']);
 
-	var db = window.db = (0, _pouchdb2['default'])('example3');
+	var db = window.db = (0, _pouchdb2['default'])('example31');
 
 	var monstersCRUD = (0, _pouchdbReduxHelper.createCRUD)(db, 'monsters', null, {
 	  startkey: null,
