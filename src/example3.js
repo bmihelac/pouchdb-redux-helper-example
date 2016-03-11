@@ -17,7 +17,7 @@ import {
 } from './components';
 import createExampleApp from './exampleApp';
 
-const db = window.db = PouchDB('example3');
+const db = window.db = PouchDB('example31');
 
 const monstersCRUD = createCRUD(db, 'monsters', null, {
   startkey: null,
