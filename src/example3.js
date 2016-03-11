@@ -3,6 +3,7 @@ import PouchDBLoad from 'pouchdb-load';
 import React, { Component } from 'react';
 import { IndexRoute, Route } from 'react-router';
 import { connect } from 'react-redux';
+import { pushState } from 'redux-router';
 
 import { createCRUD, paginate } from 'pouchdb-redux-helper';
 
@@ -52,23 +53,53 @@ const PaginatedComponent = (props) => {
   return (
     <div>
       <ProjectTable items={props.items} columns={columns} />
-      <Navigation next={next} prev={prev} />
+      <Navigation location={props.location} next={next} prev={prev} />
     </div>
   );
 }
 
 //map url params to props
 @connect(state => ({
+  query: state.router.location.query,
   startkey: state.router.location.query.start,
+  q: state.router.location.query.q,
 }))
 class Container extends Component {
   render() {
-    const {startkey} = this.props;
-    const C = paginate({
+    const {query, startkey, q, dispatch} = this.props;
+    const paginationOpts = {
       rowsPerPage: 25,
       startkey,
-    }, monstersCRUD)(PaginatedComponent);
-    return React.createElement(C);
+    }
+    const listOpts = {
+      options: {
+        fun: 'byName',
+      }
+    };
+    if (q) {
+      Object.assign(listOpts.options, {
+        startkey: q.toLowerCase(),
+        endkey: q.toLowerCase() + '\uffff',
+      });
+    }
+    const C = paginate(
+      paginationOpts,
+      monstersCRUD,
+      listOpts
+    )(PaginatedComponent);
+
+    const location = {
+      pathname: '/',
+      query
+    }
+    return (
+      <div>
+        <input type="search" value={q} placeholder="Search"
+          onChange={e => dispatch(pushState(null, '/', {q: e.target.value})) }
+        />
+        <C location={location} />
+      </div>
+    )
   }
 }
 
@@ -79,15 +110,35 @@ const routes = (
 );
 
 
-// load data from file
-db.get('_local/initial_load_complete').catch(function (err) {
+const ddoc = {
+  _id: '_design/byName',
+  views: {
+    byName: {
+      map: function (doc) {
+        if (doc.name) {
+          emit(doc.name.toLowerCase());
+        }
+      }.toString()
+    }
+  }
+}
+
+db.get(ddoc._id).catch(err => {
   if (err.status !== 404) {
     throw err;
   }
-  document.getElementById('root').innerHTML = 'populating database';
-  return db.load('data/monsters.txt').then(() => {
-    return db.put({_id: '_local/initial_load_complete'});
+  return db.put(ddoc);
+}).then(() => {
+  // load data from file
+  return db.get('_local/initial_load_complete').catch(function (err) {
+    if (err.status !== 404) {
+      throw err;
+    }
+    document.getElementById('root').innerHTML = 'populating database';
+    return db.load('data/monsters.txt').then(() => {
+      return db.put({_id: '_local/initial_load_complete'});
+    });
+  }).then(function() {
+    createExampleApp(reducers, routes);
   });
-}).then(function() {
-  createExampleApp(reducers, routes);
 });

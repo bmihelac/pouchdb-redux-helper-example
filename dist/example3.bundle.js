@@ -74,6 +74,8 @@
 
 	var _reactRedux = __webpack_require__(174);
 
+	var _reduxRouter = __webpack_require__(194);
+
 	var _pouchdbReduxHelper = __webpack_require__(306);
 
 	var _components = __webpack_require__(321);
@@ -102,7 +104,7 @@
 	    'div',
 	    null,
 	    _react2['default'].createElement(_components.ProjectTable, { items: props.items, columns: columns }),
-	    _react2['default'].createElement(_components.Navigation, { next: next, prev: prev })
+	    _react2['default'].createElement(_components.Navigation, { location: props.location, next: next, prev: prev })
 	  );
 	};
 
@@ -120,20 +122,52 @@
 	  _createClass(Container, [{
 	    key: 'render',
 	    value: function render() {
-	      var startkey = this.props.startkey;
+	      var _props = this.props;
+	      var query = _props.query;
+	      var startkey = _props.startkey;
+	      var q = _props.q;
+	      var dispatch = _props.dispatch;
 
-	      var C = (0, _pouchdbReduxHelper.paginate)({
+	      var paginationOpts = {
 	        rowsPerPage: 25,
 	        startkey: startkey
-	      }, monstersCRUD)(PaginatedComponent);
-	      return _react2['default'].createElement(C);
+	      };
+	      var listOpts = {
+	        options: {
+	          fun: 'byName'
+	        }
+	      };
+	      if (q) {
+	        Object.assign(listOpts.options, {
+	          startkey: q.toLowerCase(),
+	          endkey: q.toLowerCase() + '￿'
+	        });
+	      }
+	      var C = (0, _pouchdbReduxHelper.paginate)(paginationOpts, monstersCRUD, listOpts)(PaginatedComponent);
+
+	      var location = {
+	        pathname: '/',
+	        query: query
+	      };
+	      return _react2['default'].createElement(
+	        'div',
+	        null,
+	        _react2['default'].createElement('input', { type: 'search', value: q, placeholder: 'Search',
+	          onChange: function (e) {
+	            return dispatch((0, _reduxRouter.pushState)(null, '/', { q: e.target.value }));
+	          }
+	        }),
+	        _react2['default'].createElement(C, { location: location })
+	      );
 	    }
 	  }]);
 
 	  var _Container = Container;
 	  Container = (0, _reactRedux.connect)(function (state) {
 	    return {
-	      startkey: state.router.location.query.start
+	      query: state.router.location.query,
+	      startkey: state.router.location.query.start,
+	      q: state.router.location.query.q
 	    };
 	  })(Container) || Container;
 	  return Container;
@@ -145,17 +179,37 @@
 	  _react2['default'].createElement(_reactRouter.IndexRoute, { component: Container })
 	);
 
-	// load data from file
-	db.get('_local/initial_load_complete')['catch'](function (err) {
+	var ddoc = {
+	  _id: '_design/byName',
+	  views: {
+	    byName: {
+	      map: (function (doc) {
+	        if (doc.name) {
+	          emit(doc.name.toLowerCase());
+	        }
+	      }).toString()
+	    }
+	  }
+	};
+
+	db.get(ddoc._id)['catch'](function (err) {
 	  if (err.status !== 404) {
 	    throw err;
 	  }
-	  document.getElementById('root').innerHTML = 'populating database';
-	  return db.load('data/monsters.txt').then(function () {
-	    return db.put({ _id: '_local/initial_load_complete' });
-	  });
+	  return db.put(ddoc);
 	}).then(function () {
-	  (0, _exampleApp2['default'])(reducers, routes);
+	  // load data from file
+	  return db.get('_local/initial_load_complete')['catch'](function (err) {
+	    if (err.status !== 404) {
+	      throw err;
+	    }
+	    document.getElementById('root').innerHTML = 'populating database';
+	    return db.load('data/monsters.txt').then(function () {
+	      return db.put({ _id: '_local/initial_load_complete' });
+	    });
+	  }).then(function () {
+	    (0, _exampleApp2['default'])(reducers, routes);
+	  });
 	});
 
 /***/ },
@@ -49059,6 +49113,8 @@
 	  value: true
 	});
 
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
@@ -49239,12 +49295,13 @@
 	exports.ProjectTable = ProjectTable;
 	// linked list style pagination component
 	var Navigation = function Navigation(_ref4) {
+	  var location = _ref4.location;
 	  var next = _ref4.next;
 	  var prev = _ref4.prev;
 
 	  var nextLink = next ? _react2['default'].createElement(
 	    _reactRouter.Link,
-	    { to: '?start=' + next },
+	    { to: location.pathname, query: _extends({}, location.query, { start: next }) },
 	    'Next page'
 	  ) : _react2['default'].createElement(
 	    'span',
@@ -49253,7 +49310,7 @@
 	  );
 	  var prevLink = prev ? _react2['default'].createElement(
 	    _reactRouter.Link,
-	    { to: '?start=' + prev },
+	    { to: location.pathname, query: _extends({}, location.query, { start: prev }) },
 	    'Previous page'
 	  ) : _react2['default'].createElement(
 	    'span',

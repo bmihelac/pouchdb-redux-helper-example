@@ -79,9 +79,9 @@ export const ProjectTable = ({items, columns=['name']}) => (
 
 
 // linked list style pagination component
-export const Navigation = ({next, prev}) => {
-  const nextLink = next ? <Link to={`?start=${next}`}>Next page</Link> : <span>Next page</span>;
-  const prevLink = prev ? <Link to={`?start=${prev}`}>Previous page</Link> : <span>Previous page</span>;
+export const Navigation = ({location, next, prev}) => {
+  const nextLink = next ? <Link to={location.pathname} query={{...location.query, start: next}}>Next page</Link> : <span>Next page</span>;
+  const prevLink = prev ? <Link to={location.pathname} query={{...location.query, start: prev}}>Previous page</Link> : <span>Previous page</span>;
   return (
     <nav>
       <ul className="pager">
