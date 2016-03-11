@@ -26,7 +26,7 @@ const PaginatedComponent = (props) => {
   return (
     <div>
       <ProjectTable items={props.items} />
-      <Navigation next={next} prev={prev} />
+      <Navigation location={{pathname: '/'}} next={next} prev={prev} />
     </div>
   );
 }

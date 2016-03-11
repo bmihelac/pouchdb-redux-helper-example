@@ -91,7 +91,7 @@
 	    'div',
 	    null,
 	    _react2['default'].createElement(_components.ProjectTable, { items: props.items }),
-	    _react2['default'].createElement(_components.Navigation, { next: next, prev: prev })
+	    _react2['default'].createElement(_components.Navigation, { location: { pathname: '/' }, next: next, prev: prev })
 	  );
 	};
 
