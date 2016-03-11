@@ -48977,20 +48977,27 @@
 	    //assign next page starting id
 	    if (payload.rows[rowsPerPage]) {
 	      var lastRow = payload.rows.pop();
-	      payload.next = lastRow.id;
+	      payload.next = lastRow.key;
+	    }
+	    if (payload.rows.length == 0) {
+	      return payload;
 	    }
 	    // create reversedParams from funParams
 	    var reversedParams = _extends({}, funParams, {
-	      startkey: payload.rows[0].id,
-	      endkey: listParams.startkey,
+	      include_docs: false,
+	      attachments: false,
+	      startkey: payload.rows[0].key,
 	      limit: rowsPerPage,
 	      skip: 1,
 	      descending: true
 	    });
+	    if (listParams.startkey) {
+	      reversedParams.endkey = listParams.startkey;
+	    }
 	    return fun(reversedParams).then(function (r) {
 	      var firstRow = r.rows.pop();
 	      if (firstRow) {
-	        payload.prev = firstRow.id;
+	        payload.prev = firstRow.key;
 	      }
 	      return payload;
 	    });
@@ -49011,13 +49018,8 @@
 	    var rowsPerPage = _Object$assign.rowsPerPage;
 	    var startkey = _Object$assign.startkey;
 
-	    // finalOpts from argument opts or from mapStateToProps
+	    // finalOpts from argument opts overriden with eventual listOpts from mapStateToProps
 	    var finalOpts = Object.assign(opts, props.listOpts);
-	    // set pouchdb options with pagination related things
-	    finalOpts.options = Object.assign({}, finalOpts.options, {
-	      limit: rowsPerPage + 1,
-	      startkey: startkey
-	    });
 	    var toFolder = (finalOpts.folder || (0, _containersList.folderNameFromOpts)(finalOpts.options)) + paginationFolderSuffix(rowsPerPage, startkey);
 	    var propName = finalOpts.propName || 'items';
 	    // add documents, folderVars to props
@@ -49025,7 +49027,7 @@
 	    // assign action that loads items from db
 	    props.action = function () {
 	      return (0, _actions.createPromiseAction)(function () {
-	        return paginateQuery(crud, toFolder, rowsPerPage, startkey);
+	        return paginateQuery(crud, finalOpts, rowsPerPage, startkey);
 	      }, crud.actionTypes.query, { folder: toFolder });
 	    };
 	    return props;
