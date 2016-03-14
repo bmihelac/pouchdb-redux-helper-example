@@ -42712,7 +42712,7 @@
 
 	_defaults(exports, _interopExportWildcard(_crud, _defaults));
 
-	var _actions2 = __webpack_require__(312);
+	var _actions2 = __webpack_require__(318);
 
 	var _actions = _interopRequireWildcard(_actions2);
 
@@ -42748,7 +42748,7 @@
 
 	var containers = _interopRequireWildcard(_containers);
 
-	var _crud = __webpack_require__(318);
+	var _crud = __webpack_require__(317);
 
 	exports.createCRUD = _interopRequire(_crud);
 
@@ -42781,12 +42781,6 @@
 	    return _containersList.createMapStateToProps;
 	  }
 	});
-	Object.defineProperty(exports, 'folderNameFromOpts', {
-	  enumerable: true,
-	  get: function get() {
-	    return _containersList.folderNameFromOpts;
-	  }
-	});
 	Object.defineProperty(exports, 'connectList', {
 	  enumerable: true,
 	  get: function get() {
@@ -42794,7 +42788,7 @@
 	  }
 	});
 
-	var _containersDetail = __webpack_require__(315);
+	var _containersDetail = __webpack_require__(314);
 
 	Object.defineProperty(exports, 'connectSingleItem', {
 	  enumerable: true,
@@ -42821,7 +42815,7 @@
 	  }
 	});
 
-	var _containersCommon = __webpack_require__(313);
+	var _containersCommon = __webpack_require__(312);
 
 	Object.defineProperty(exports, 'wrap', {
 	  enumerable: true,
@@ -42842,7 +42836,6 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	exports.folderNameFromOpts = folderNameFromOpts;
 	exports.isQuery = isQuery;
 	exports.getListFunction = getListFunction;
 	exports.getListParams = getListParams;
@@ -42860,9 +42853,7 @@
 
 	var utils = _interopRequireWildcard(_utils);
 
-	var _actions = __webpack_require__(312);
-
-	var _common = __webpack_require__(313);
+	var _common = __webpack_require__(312);
 
 	var createMapStateToProps = function createMapStateToProps(mountPoint, folder, propName) {
 	  if (folder === undefined) folder = '';
@@ -42877,10 +42868,6 @@
 	};
 
 	exports.createMapStateToProps = createMapStateToProps;
-
-	function folderNameFromOpts(options) {
-	  return JSON.stringify(options);
-	}
 
 	function isQuery(opts) {
 	  return opts.options && opts.options.fun;
@@ -42935,7 +42922,7 @@
 
 	    var folderVars = _objectWithoutProperties(finalOpts, ['options', 'folder', 'propName']);
 
-	    var toFolder = folder || folderNameFromOpts(options);
+	    var toFolder = folder || (0, _utils.folderNameFromOpts)(options);
 
 	    Object.assign(props, createMapStateToProps(crud.mountPoint, toFolder, propName)(state));
 
@@ -42988,6 +42975,7 @@
 	exports.createActionType = createActionType;
 	exports.markDocumentDeleted = markDocumentDeleted;
 	exports.createDetailLink = createDetailLink;
+	exports.folderNameFromOpts = folderNameFromOpts;
 
 	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
@@ -43188,6 +43176,19 @@
 
 	function createDetailLink(urlPrefix, docId) {
 	  return urlPrefix + '/' + docId + '/';
+	}
+
+	/**
+	 * folderNameFromOpts
+	 *
+	 * @param options
+	 * @returns {string}
+	 */
+
+	function folderNameFromOpts() {
+	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	  return JSON.stringify(options);
 	}
 
 /***/ },
@@ -48179,56 +48180,6 @@
 
 /***/ },
 /* 312 */
-/***/ function(module, exports) {
-
-	/**
-	 * Creates thunk for given promise function.
-	 *
-	 * Dispatch `actionTypes.request` action and execute function `fun`.
-	 * On resolved promise, `actionTypes.success` is dispatched with `payload`.
-	 * On error, `actionTypes.failure` is dispatched with `err`.
-	 *
-	 * @param fun - function(dispatch, getState)
-	 * @param actionTypes - action types object
-	 * @param actionTypes.request
-	 * @param actionTypes.success
-	 * @param actionTypes.failure
-	 * @param [actionParams={}] - params to dispatch with every action
-	 * @returns function
-	 */
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	exports.createPromiseAction = createPromiseAction;
-
-	function createPromiseAction(fun, actionTypes) {
-	  var actionParams = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-	  return function (dispatch, getState) {
-	    dispatch(_extends({
-	      type: actionTypes.request
-	    }, actionParams));
-	    return fun(dispatch, getState).then(function (payload) {
-	      dispatch(_extends({
-	        type: actionTypes.success,
-	        payload: payload
-	      }, actionParams));
-	    })["catch"](function (err) {
-	      dispatch(_extends({
-	        type: actionTypes.failure,
-	        err: err
-	      }, actionParams));
-	    });
-	  };
-	}
-
-/***/ },
-/* 313 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48242,7 +48193,7 @@
 
 	var _reactRedux = __webpack_require__(174);
 
-	var _loading = __webpack_require__(314);
+	var _loading = __webpack_require__(313);
 
 	var _loading2 = _interopRequireDefault(_loading);
 
@@ -48253,7 +48204,7 @@
 	}
 
 /***/ },
-/* 314 */
+/* 313 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48396,7 +48347,7 @@
 	;
 
 /***/ },
-/* 315 */
+/* 314 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48417,7 +48368,7 @@
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-	var _uuid = __webpack_require__(316);
+	var _uuid = __webpack_require__(315);
 
 	var _uuid2 = _interopRequireDefault(_uuid);
 
@@ -48425,7 +48376,7 @@
 
 	var utils = _interopRequireWildcard(_utils);
 
-	var _common = __webpack_require__(313);
+	var _common = __webpack_require__(312);
 
 	/**
 	 * combines result of two mapStateToProps functions
@@ -48502,7 +48453,7 @@
 	;
 
 /***/ },
-/* 316 */
+/* 315 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//     uuid.js
@@ -48513,7 +48464,7 @@
 	// Unique ID creation requires a high quality random # generator.  We feature
 	// detect to determine the best RNG source, normalizing to a function that
 	// returns 128-bits of randomness, since that's what's usually required
-	var _rng = __webpack_require__(317);
+	var _rng = __webpack_require__(316);
 
 	// Maps for number <-> hex string conversion
 	var _byteToHex = [];
@@ -48691,7 +48642,7 @@
 
 
 /***/ },
-/* 317 */
+/* 316 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {
@@ -48729,7 +48680,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 318 */
+/* 317 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48748,7 +48699,7 @@
 
 	var _immutable = __webpack_require__(311);
 
-	var _actions = __webpack_require__(312);
+	var _actions = __webpack_require__(318);
 
 	var _utils = __webpack_require__(310);
 
@@ -48893,6 +48844,56 @@
 	}
 
 /***/ },
+/* 318 */
+/***/ function(module, exports) {
+
+	/**
+	 * Creates thunk for given promise function.
+	 *
+	 * Dispatch `actionTypes.request` action and execute function `fun`.
+	 * On resolved promise, `actionTypes.success` is dispatched with `payload`.
+	 * On error, `actionTypes.failure` is dispatched with `err`.
+	 *
+	 * @param fun - function(dispatch, getState)
+	 * @param actionTypes - action types object
+	 * @param actionTypes.request
+	 * @param actionTypes.success
+	 * @param actionTypes.failure
+	 * @param [actionParams={}] - params to dispatch with every action
+	 * @returns function
+	 */
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	exports.createPromiseAction = createPromiseAction;
+
+	function createPromiseAction(fun, actionTypes) {
+	  var actionParams = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+	  return function (dispatch, getState) {
+	    dispatch(_extends({
+	      type: actionTypes.request
+	    }, actionParams));
+	    return fun(dispatch, getState).then(function (payload) {
+	      dispatch(_extends({
+	        type: actionTypes.success,
+	        payload: payload
+	      }, actionParams));
+	    })["catch"](function (err) {
+	      dispatch(_extends({
+	        type: actionTypes.failure,
+	        err: err
+	      }, actionParams));
+	    });
+	  };
+	}
+
+/***/ },
 /* 319 */
 /***/ function(module, exports) {
 
@@ -48935,11 +48936,13 @@
 	exports.createMapStateToPropsPagination = createMapStateToPropsPagination;
 	exports['default'] = paginate;
 
-	var _actions = __webpack_require__(312);
+	var _actions = __webpack_require__(318);
+
+	var _utils = __webpack_require__(310);
 
 	var _containersList = __webpack_require__(309);
 
-	var _containersCommon = __webpack_require__(313);
+	var _containersCommon = __webpack_require__(312);
 
 	var defaultOpts = {
 	  rowsPerPage: 10
@@ -49015,7 +49018,7 @@
 
 	    // finalOpts from argument opts overriden with eventual listOpts from mapStateToProps
 	    var finalOpts = Object.assign(opts, props.listOpts);
-	    var toFolder = (finalOpts.folder || (0, _containersList.folderNameFromOpts)(finalOpts.options)) + paginationFolderSuffix(rowsPerPage, startkey);
+	    var toFolder = (finalOpts.folder || (0, _utils.folderNameFromOpts)(finalOpts.options)) + paginationFolderSuffix(rowsPerPage, startkey);
 	    var propName = finalOpts.propName || 'items';
 	    // add documents, folderVars to props
 	    Object.assign(props, (0, _containersList.createMapStateToProps)(crud.mountPoint, toFolder, propName)(state));
@@ -49030,6 +49033,8 @@
 	}
 
 	function paginate(paginationOpts, crud, connectListOpts, mapStateToProps, mapDispatchToProps) {
+	  if (connectListOpts === undefined) connectListOpts = {};
+
 	  var mapStateToPropsFinal = createMapStateToPropsPagination(paginationOpts, crud, connectListOpts, mapStateToProps);
 	  return (0, _containersCommon.wrap)(mapStateToPropsFinal, mapDispatchToProps);
 	}
@@ -49106,13 +49111,13 @@
 	          _react2['default'].createElement('input', name),
 	          name.touched && name.error && _react2['default'].createElement(
 	            'div',
-	            null,
+	            { className: 'text-danger' },
 	            name.error
 	          )
 	        ),
 	        _react2['default'].createElement(
 	          'button',
-	          { onClick: handleSubmit.bind(this) },
+	          { className: 'btn btn-default', onClick: handleSubmit.bind(this) },
 	          'Submit'
 	        )
 	      );
@@ -49136,16 +49141,22 @@
 	      item.get('name')
 	    ),
 	    _react2['default'].createElement(
-	      _reactRouter.Link,
-	      { to: '/projects/' + item.get('_id') + '/edit/' },
-	      'Edit'
+	      'p',
+	      null,
+	      _react2['default'].createElement(
+	        _reactRouter.Link,
+	        { className: 'btn btn-default',
+	          to: '/projects/' + item.get('_id') + '/edit/' },
+	        'Edit'
+	      )
 	    ),
 	    _react2['default'].createElement(
 	      'p',
 	      null,
 	      _react2['default'].createElement(
 	        'button',
-	        { onClick: function () {
+	        { className: 'btn btn-danger',
+	          onClick: function () {
 	            return onRemove(dispatch, item);
 	          } },
 	        'remove'
@@ -49174,7 +49185,7 @@
 	    }),
 	    _react2['default'].createElement(
 	      _reactRouter.Link,
-	      { to: '/projects/new/' },
+	      { to: '/projects/new/', className: 'btn btn-default' },
 	      'New'
 	    )
 	  );

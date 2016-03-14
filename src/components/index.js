@@ -23,9 +23,9 @@ export class ProjectForm extends Component {
         <div className={'form-group' + (name.touched && name.error ? ' has-error' : '')}>
           <label>Project</label>
           <input {...name} />
-          {name.touched && name.error && <div>{name.error}</div>}
+          {name.touched && name.error && <div className="text-danger">{name.error}</div>}
         </div>
-        <button onClick={handleSubmit.bind(this)}>Submit</button>
+        <button  className="btn btn-default" onClick={handleSubmit.bind(this)}>Submit</button>
       </form>
     );
   }
@@ -35,10 +35,15 @@ export class ProjectForm extends Component {
 export const ProjectDetail = ({item, dispatch, onRemove}) => (
   <div>
     <span>{ item.get('name') }</span>
-    <Link to={`/projects/${item.get('_id')}/edit/`}>Edit</Link>
 
     <p>
-      <button onClick={ () => onRemove(dispatch, item) }>remove</button>
+      <Link className="btn btn-default"
+        to={`/projects/${item.get('_id')}/edit/`}>Edit</Link>
+    </p>
+
+    <p>
+      <button className="btn btn-danger"
+        onClick={ () => onRemove(dispatch, item) }>remove</button>
     </p>
   </div>
 );
@@ -52,7 +57,8 @@ export const ProjectList = ({items}) => (
         <Link to={`/projects/${item.get('_id')}/`}>{ item.get('name') }</Link>
       </div>
      ))}
-    <Link to="/projects/new/">New</Link>
+
+    <Link to="/projects/new/" className="btn btn-default">New</Link>
   </div>
 );
 
