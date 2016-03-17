@@ -15,6 +15,9 @@ export const projectFormOptions = {
 }
 
 
+export const Loading = () => <div className="loading">loading...</div>
+
+
 export class ProjectForm extends Component {
   render() {
     const { fields: {name }, handleSubmit } = this.props;
@@ -32,7 +35,11 @@ export class ProjectForm extends Component {
 }
 
 
-export const ProjectDetail = ({item, dispatch, onRemove}) => (
+export const ProjectDetail = ({isLoading, item, dispatch, onRemove}) => {
+  if (isLoading) {
+    return <Loading />
+  }
+  return (
   <div>
     <span>{ item.get('name') }</span>
 
@@ -46,11 +53,16 @@ export const ProjectDetail = ({item, dispatch, onRemove}) => (
         onClick={ () => onRemove(dispatch, item) }>remove</button>
     </p>
   </div>
-);
+  );
+}
 
 
 //dumb component that displays projects list
-export const ProjectList = ({items}) => (
+export const ProjectList = ({isLoading, items}) => {
+  if (isLoading) {
+    return <Loading/>
+  }
+  return (
   <div>
     { items.map(item => (
       <div key={ item.get('_id') }>
@@ -60,7 +72,8 @@ export const ProjectList = ({items}) => (
 
     <Link to="/projects/new/" className="btn btn-default">New</Link>
   </div>
-);
+  );
+}
 
 export const ProjectTable = ({items, columns=['name']}) => (
   <table className="table table-hove ">

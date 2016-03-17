@@ -9,6 +9,7 @@ import {
   ProjectTable,
   App,
   Navigation,
+  Loading,
 } from './components';
 import createExampleApp from './exampleApp';
 
@@ -20,6 +21,9 @@ const reducers = {
 };
 
 const PaginatedComponent = (props) => {
+  if (!props.items) {
+    return <Loading />
+  }
   const prev = props.folderVars.get('prev');
   const next = props.folderVars.get('next');
 

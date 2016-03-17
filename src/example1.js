@@ -13,6 +13,7 @@ import {
   ProjectDetail,
   ProjectList,
   App,
+  Loading,
 } from './components';
 import createExampleApp from './exampleApp';
 
@@ -55,13 +56,18 @@ export const ProjectDetailContainer = connect(
 
 
 const editMapStateToProps = state => {
-  const item = utils.getObjectFromState(state, projectsCrud.mountPoint, state.router.params.id).toJS();
+  const item = utils.getObjectFromState(state, projectsCrud.mountPoint, state.router.params.id);
+  if (!item) {
+    return {}
+  }
   return ({
-    onSubmit: redirectToList.bind(null, onSubmit, item),
-    initialValues: item,
+    onSubmit: redirectToList.bind(null, onSubmit, item.toJS()),
+    initialValues: item.toJS(),
   });
 };
 
+
+// TODO: use just one decorator, like in example3
 export const ProjectEditContainer = connect(state => ({ docId: state.router.params.id }))(
   containers.connectSingleItem(projectsCrud)(
     reduxForm(projectFormOptions, editMapStateToProps)(ProjectForm)

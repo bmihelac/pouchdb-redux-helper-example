@@ -9,7 +9,6 @@ import { createCRUD, paginate } from 'pouchdb-redux-helper';
 
 PouchDB.plugin(PouchDBLoad);
 
-
 import {
   ProjectTable,
   App,
@@ -46,62 +45,71 @@ const columns = [
   'weight',
 ]
 
-const PaginatedComponent = (props) => {
-  const prev = props.folderVars.get('prev');
-  const next = props.folderVars.get('next');
+class PaginatedComponent extends Component {
 
-  return (
-    <div>
-      <ProjectTable items={props.items} columns={columns} />
-      <Navigation location={props.location} next={next} prev={prev} />
-    </div>
-  );
-}
+  constructor(props) {
+    super(props);
+    this.state = {
+      items: props.items
+    }
+  }
 
-//map url params to props
-@connect(state => ({
-  query: state.router.location.query,
-  startkey: state.router.location.query.start,
-  q: state.router.location.query.q,
-}))
-class Container extends Component {
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.items !== null) {
+      this.setState(nextProps);
+    }
+  }
+
   render() {
-    const {query, startkey, q, dispatch} = this.props;
-    const paginationOpts = {
-      rowsPerPage: 25,
-      startkey,
+    if (!this.state.items) {
+      return <div>loading...</div>;
     }
-    const listOpts = {
-      options: {
-        fun: 'byName',
-      }
-    };
-    if (q) {
-      Object.assign(listOpts.options, {
-        startkey: q.toLowerCase(),
-        endkey: q.toLowerCase() + '\uffff',
-      });
-    }
-    const C = paginate(
-      paginationOpts,
-      monstersCRUD,
-      listOpts
-    )(PaginatedComponent);
+    const props = this.props;
+    const folderVars = this.state.folderVars;
+    const prev = folderVars.get('prev');
+    const next = folderVars.get('next');
+    const opacity = props.isLoading ? '0.5' : '1';
 
-    const location = {
-      pathname: '/',
-      query
-    }
     return (
       <div>
-        <input type="search" value={q} placeholder="Search"
-          onChange={e => dispatch(pushState(null, '/', {q: e.target.value})) }
+        <input type="search" value={props.q} placeholder="Search"
+          onChange={e => props.dispatch(pushState(null, '/', {q: e.target.value})) }
         />
-        <C location={location} />
+        <div style={{opacity}}>
+          <ProjectTable items={this.state.items} columns={columns} />
+          <Navigation location={props.location} next={next} prev={prev} />
+        </div>
       </div>
-    )
+    );
+  }
+
+}
+
+
+function mapStateToProps(state) {
+  const query = state.router.location.query;
+  let listOpts = {
+    options: { fun: 'byName' }
+  }
+  if (query.q) {
+    listOpts.options.startkey = query.q.toLowerCase();
+    listOpts.options.endkey = query.q.toLowerCase() + '\uffff';
+  }
+  return {
+    query,
+    startkey: query.start,
+    q: query.q,
+    location: { pathname: '/', query },
+    listOpts,
   }
 }
+const Container = paginate(
+  { rowsPerPage: 25 },
+  monstersCRUD,
+  {},
+  mapStateToProps
+)(PaginatedComponent);
+
 
 const routes = (
   <Route path="/" component={App}>
