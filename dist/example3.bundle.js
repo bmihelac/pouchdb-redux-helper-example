@@ -91,7 +91,16 @@
 	_pouchdb2['default'].plugin(_pouchdbLoad2['default']);
 
 	window.PouchDB = _pouchdb2['default'];
-	var db = window.db = (0, _pouchdb2['default'])('example31');
+	var db = undefined;
+
+	var dbName = 'example32';
+	db = new _pouchdb2['default'](dbName, {
+	  adapter: 'websql'
+	});
+	if (!db) {
+	  db = new _pouchdb2['default'](dbName);
+	}
+	window.db = db;
 
 	var monstersCRUD = (0, _pouchdbReduxHelper.createCRUD)(db, 'monsters', null, {
 	  startkey: null,
