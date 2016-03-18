@@ -74,6 +74,10 @@
 
 	var _reactRedux = __webpack_require__(174);
 
+	var _debounce = __webpack_require__(482);
+
+	var _debounce2 = _interopRequireDefault(_debounce);
+
 	var _reduxRouter = __webpack_require__(194);
 
 	var _pouchdbReduxHelper = __webpack_require__(306);
@@ -86,6 +90,7 @@
 
 	_pouchdb2['default'].plugin(_pouchdbLoad2['default']);
 
+	window.PouchDB = _pouchdb2['default'];
 	var db = window.db = (0, _pouchdb2['default'])('example31');
 
 	var monstersCRUD = (0, _pouchdbReduxHelper.createCRUD)(db, 'monsters', null, {
@@ -100,9 +105,16 @@
 	  _inherits(PaginatedComponent, _Component);
 
 	  function PaginatedComponent(props) {
+	    var _this = this;
+
 	    _classCallCheck(this, PaginatedComponent);
 
 	    _get(Object.getPrototypeOf(PaginatedComponent.prototype), 'constructor', this).call(this, props);
+
+	    this.search = function (q) {
+	      _this.props.dispatch((0, _reduxRouter.pushState)(null, '/', { q: q }));
+	    };
+
 	    this.state = {
 	      items: props.items
 	    };
@@ -130,13 +142,15 @@
 	      var prev = folderVars.get('prev');
 	      var next = folderVars.get('next');
 	      var opacity = props.isLoading ? '0.5' : '1';
+	      var handleSearch = (0, _debounce2['default'])(this.search, 100);
 
 	      return _react2['default'].createElement(
 	        'div',
 	        null,
-	        _react2['default'].createElement('input', { type: 'search', value: props.q, placeholder: 'Search',
+	        _react2['default'].createElement('input', { type: 'search', defaultValue: props.q, placeholder: 'Search',
+	          className: 'form-control',
 	          onChange: function (e) {
-	            return props.dispatch((0, _reduxRouter.pushState)(null, '/', { q: e.target.value }));
+	            return handleSearch(e.target.value);
 	          }
 	        }),
 	        _react2['default'].createElement(
@@ -58552,6 +58566,76 @@
 
 	module.exports = generateReplicationId;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), (function() { return this; }())))
+
+/***/ },
+/* 482 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * Module dependencies.
+	 */
+
+	var now = __webpack_require__(483);
+
+	/**
+	 * Returns a function, that, as long as it continues to be invoked, will not
+	 * be triggered. The function will be called after it stops being called for
+	 * N milliseconds. If `immediate` is passed, trigger the function on the
+	 * leading edge, instead of the trailing.
+	 *
+	 * @source underscore.js
+	 * @see http://unscriptable.com/2009/03/20/debouncing-javascript-methods/
+	 * @param {Function} function to wrap
+	 * @param {Number} timeout in ms (`100`)
+	 * @param {Boolean} whether to execute at the beginning (`false`)
+	 * @api public
+	 */
+
+	module.exports = function debounce(func, wait, immediate){
+	  var timeout, args, context, timestamp, result;
+	  if (null == wait) wait = 100;
+
+	  function later() {
+	    var last = now() - timestamp;
+
+	    if (last < wait && last > 0) {
+	      timeout = setTimeout(later, wait - last);
+	    } else {
+	      timeout = null;
+	      if (!immediate) {
+	        result = func.apply(context, args);
+	        if (!timeout) context = args = null;
+	      }
+	    }
+	  };
+
+	  return function debounced() {
+	    context = this;
+	    args = arguments;
+	    timestamp = now();
+	    var callNow = immediate && !timeout;
+	    if (!timeout) timeout = setTimeout(later, wait);
+	    if (callNow) {
+	      result = func.apply(context, args);
+	      context = args = null;
+	    }
+
+	    return result;
+	  };
+	};
+
+
+/***/ },
+/* 483 */
+/***/ function(module, exports) {
+
+	module.exports = Date.now || now
+
+	function now() {
+	    return new Date().getTime()
+	}
+
 
 /***/ }
 /******/ ]);

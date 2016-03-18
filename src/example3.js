@@ -3,6 +3,7 @@ import PouchDBLoad from 'pouchdb-load';
 import React, { Component } from 'react';
 import { IndexRoute, Route } from 'react-router';
 import { connect } from 'react-redux';
+import debounce from 'debounce';
 import { pushState } from 'redux-router';
 
 import { createCRUD, paginate } from 'pouchdb-redux-helper';
@@ -16,6 +17,7 @@ import {
 } from './components';
 import createExampleApp from './exampleApp';
 
+window.PouchDB = PouchDB;
 const db = window.db = PouchDB('example31');
 
 const monstersCRUD = createCRUD(db, 'monsters', null, {
@@ -60,6 +62,10 @@ class PaginatedComponent extends Component {
     }
   }
 
+  search = q => {
+    this.props.dispatch(pushState(null, '/', {q}));
+  }
+
   render() {
     if (!this.state.items) {
       return <div>loading...</div>;
@@ -69,11 +75,13 @@ class PaginatedComponent extends Component {
     const prev = folderVars.get('prev');
     const next = folderVars.get('next');
     const opacity = props.isLoading ? '0.5' : '1';
+    const handleSearch = debounce(this.search, 100);
 
     return (
       <div>
-        <input type="search" value={props.q} placeholder="Search"
-          onChange={e => props.dispatch(pushState(null, '/', {q: e.target.value})) }
+        <input type="search" defaultValue={props.q} placeholder="Search"
+          className="form-control"
+          onChange={e => handleSearch(e.target.value)}
         />
         <div style={{opacity}}>
           <ProjectTable items={this.state.items} columns={columns} />
