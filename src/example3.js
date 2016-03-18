@@ -18,7 +18,16 @@ import {
 import createExampleApp from './exampleApp';
 
 window.PouchDB = PouchDB;
-const db = window.db = PouchDB('example31');
+let db;
+
+const dbName = 'example32';
+db = new PouchDB(dbName, {
+  adapter: 'websql'
+});
+if (!db) {
+  db = new PouchDB(dbName);
+}
+window.db = db;
 
 const monstersCRUD = createCRUD(db, 'monsters', null, {
   startkey: null,
