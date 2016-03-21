@@ -47,13 +47,14 @@ export const ProjectNewContainer = reduxForm(projectFormOptions, state => ({
   onSubmit: redirectToList.bind(null, onCreate, null),
 }))(ProjectForm);
 
-export const ProjectDetailContainer = connect(
-  state => ({
-    docId: state.router.params.id,
-    onRemove,
-  })
-)(containers.connectSingleItem(projectsCrud)(ProjectDetail))
 
+const singleItem = containers.connectSingleItem(
+  projectsCrud, {}, state => ({
+  singleItemOpts: {docId: state.router.params.id},
+  onRemove,
+}))
+
+export const ProjectDetailContainer = singleItem(ProjectDetail)
 
 const editMapStateToProps = state => {
   const item = utils.getObjectFromState(state, projectsCrud.mountPoint, state.router.params.id);
@@ -67,11 +68,12 @@ const editMapStateToProps = state => {
 };
 
 
-// TODO: use just one decorator, like in example3
-export const ProjectEditContainer = connect(state => ({ docId: state.router.params.id }))(
-  containers.connectSingleItem(projectsCrud)(
-    reduxForm(projectFormOptions, editMapStateToProps)(ProjectForm)
-));
+export const ProjectEditContainer = singleItem(
+  reduxForm(projectFormOptions, editMapStateToProps)(ProjectForm)
+);
+
+
+
 
 const routes = (
   <Route path="/" component={App}>
