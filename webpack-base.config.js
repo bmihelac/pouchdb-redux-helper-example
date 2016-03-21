@@ -1,4 +1,8 @@
 var path = require('path');
+var fs = require('fs');
+
+
+var pouchdbReduxHelperPath = fs.realpathSync(path.resolve(__dirname, 'node_modules/pouchdb-redux-helper/src'));
 
 module.exports = {
   entry: {
@@ -12,12 +16,19 @@ module.exports = {
   },
   plugins: [
   ],
+  resolve: {
+    root: path.resolve(__dirname, 'node_modules'),
+    alias: {
+      'pouchdb-redux-helper': pouchdbReduxHelperPath,
+    }
+  },
   module: {
     loaders: [{
       test: /\.js$/,
       loaders: ['babel'],
       include: [
         path.join(__dirname, 'src'),
+        pouchdbReduxHelperPath,
       ]
     }]
   }
